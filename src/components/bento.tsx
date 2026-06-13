@@ -104,39 +104,3 @@ export function ScreenshotSlot({
     </div>
   );
 }
-
-/** A single testimonial card used inside a glow bento cell. */
-export function Quote({
-  children,
-  name,
-  role,
-  avatarSrc,
-}: {
-  children: ReactNode;
-  name: string;
-  role: string;
-  avatarSrc?: string;
-}) {
-  return (
-    <figure className="flex h-full flex-col justify-between gap-6 rounded-2xl bg-[#0a0a0c] p-6 text-white">
-      <blockquote className="space-y-3 text-sm leading-relaxed text-white/90">
-        {children}
-      </blockquote>
-      <figcaption className="flex items-center gap-3">
-        {avatarSrc ? (
-          <img
-            src={avatarSrc}
-            alt={name}
-            className="size-9 rounded-full object-cover"
-          />
-        ) : (
-          <span className="size-9 rounded-full bg-fd-primary/40 ring-1 ring-white/10" />
-        )}
-        <span className="leading-tight">
-          <span className="block text-sm font-semibold">{name}</span>
-          <span className="block text-xs text-white/50">{role}</span>
-        </span>
-      </figcaption>
-    </figure>
-  );
-}

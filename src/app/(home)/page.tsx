@@ -10,12 +10,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  BentoCard,
-  BentoGrid,
-  Quote,
-  ScreenshotSlot,
-} from '@/components/bento';
+import { BentoCard, BentoGrid, ScreenshotSlot } from '@/components/bento';
 import { gitConfig } from '@/lib/shared';
 
 const features = [
@@ -169,28 +164,6 @@ export default function HomePage() {
             </Button>
           </BentoCard>
 
-          {/* testimonials */}
-          <BentoCard glow>
-            <div className="grid h-full gap-2 sm:grid-cols-2">
-              <Quote name="Researcher name" role="Imaging Facility">
-                <p>
-                  You know how every experiment ends up as a folder of one-off
-                  scripts nobody else can run?
-                </p>
-                <p>
-                  Arkitekt turns those into apps the whole group can launch —
-                  same data, same results, no glue code.
-                </p>
-              </Quote>
-              <Quote name="Researcher name" role="Core Facility Lead">
-                <p>
-                  Massive shoutout to the Arkitekt team — a datahub that finally
-                  makes streaming microscopy analysis feel composable.
-                </p>
-              </Quote>
-            </div>
-          </BentoCard>
-
           {/* docs / app screenshot */}
           <BentoCard glow>
             <div className="h-full overflow-hidden rounded-2xl bg-[#0a0a0c] p-2">
@@ -202,7 +175,7 @@ export default function HomePage() {
           </BentoCard>
 
           {/* customizability + install snippet */}
-          <BentoCard className="flex flex-col justify-between gap-8 p-8 sm:p-10">
+          <BentoCard className="flex flex-col justify-between gap-8 p-8 sm:p-10 lg:col-span-2">
             <div>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Built to fit your lab, not the other way around.
