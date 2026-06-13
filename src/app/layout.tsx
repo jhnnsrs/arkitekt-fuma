@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google';
 import { Provider } from '@/components/provider';
+import { BrandColorScript } from '@/components/brand-color';
 import './global.css';
 
 const inter = Inter({
@@ -10,6 +11,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
+        <BrandColorScript />
         <Provider>{children}</Provider>
       </body>
     </html>

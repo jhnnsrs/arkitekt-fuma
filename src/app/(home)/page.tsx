@@ -2,13 +2,20 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Boxes,
+  Copy,
   GitFork,
   Microscope,
   Network,
+  Sparkles,
   Workflow,
-  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  BentoCard,
+  BentoGrid,
+  Quote,
+  ScreenshotSlot,
+} from '@/components/bento';
 import { gitConfig } from '@/lib/shared';
 
 const features = [
@@ -40,58 +47,61 @@ const features = [
 
 export default function HomePage() {
   return (
-    <main className="relative flex flex-1 flex-col overflow-hidden">
-      {/* decorative background */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-      >
-        <div className="absolute left-1/2 top-[-10%] h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-fd-primary/20 opacity-60 blur-[120px]" />
-        <div className="absolute right-[-10%] top-[20%] h-[28rem] w-[28rem] rounded-full bg-fd-primary/10 blur-[120px]" />
+    <main className="flex flex-1 flex-col px-6 pb-24 pt-6 sm:px-6 lg:px-8">
+      {/* ───────────────────────── Hero ───────────────────────── */}
+      <section className="relative isolate w-full overflow-hidden rounded-3xl border border-white/10 bg-[#0a0a0c] text-white lg:min-h-[660px]">
+        {/* brand glow */}
         <div
-          className="absolute inset-0 opacity-[0.25] [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, var(--color-fd-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-fd-border) 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+        >
+          <div className="absolute -left-24 -top-24 h-[34rem] w-[34rem] rounded-full bg-primary/30 blur-[130px]" />
+          <div className="absolute -right-16 top-1/4 h-[28rem] w-[28rem] rounded-full bg-primary/20 blur-[130px]" />
+          <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-primary/10 blur-[120px]" />
+        </div>
+        {/* grain overlay */}
+        <div
+          aria-hidden
+          className="bg-grain pointer-events-none absolute inset-0 -z-10 opacity-[0.12] mix-blend-overlay"
         />
-      </div>
 
-      {/* hero */}
-      <section className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:py-24">
-        <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-          <span className="inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card/60 px-3 py-1 text-xs font-medium text-fd-muted-foreground backdrop-blur">
-            <Zap className="size-3.5 text-fd-primary" />
-            Open-source bioimage analysis platform
+        <div className="relative z-10 max-w-2xl px-6 pt-14 sm:px-12 sm:pt-20 lg:px-16 lg:pb-28">
+          {/* badge */}
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary backdrop-blur">
+            <Sparkles className="size-3.5" />
+            The open platform for bioimage analysis.
           </span>
 
-          <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Streaming analysis
+          {/* headline */}
+          <h1 className="mt-7 max-w-3xl text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+            Streaming analysis,
             <br />
-            for{' '}
-            <span className="bg-gradient-to-r from-fd-primary to-fd-primary/50 bg-clip-text text-transparent">
-              microscopy
-            </span>
+            <span className="text-primary">your way.</span>
           </h1>
 
-          <p className="mt-6 max-w-md text-lg text-fd-muted-foreground">
+          <p className="mt-6 max-w-xl text-lg text-white/60">
             Arkitekt is the middleman between your data, your tools and your
-            team — a datahub that turns scattered scripts into shareable,
-            reactive analysis apps.
+            team — turning scattered scripts into shareable, reactive analysis
+            apps.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-            <Button asChild size="lg">
-              <Link href="/docs/introduction/installation" className="text-white">
+          {/* CTAs */}
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full px-7 text-base"
+            >
+              <Link href="/docs/introduction/installation">
                 Get started
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/docs">Read the docs</Link>
-            </Button>
-            <Button asChild variant="ghost" size="lg">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full border border-white/10 bg-white/10 px-7 text-base text-white hover:bg-white/20"
+            >
               <a
                 href={`https://github.com/${gitConfig.user}/${gitConfig.repo}`}
                 target="_blank"
@@ -104,19 +114,124 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* illustration */}
-        <div className="relative flex items-center justify-center">
-          <div className="absolute inset-0 -z-10 rounded-3xl bg-fd-primary/10 blur-3xl" />
-          <img
-            src="/img/middleman.svg"
-            alt="Arkitekt acts as a middleman between users, tools and data"
-            className="w-full max-w-xl drop-shadow-2xl"
-          />
+        {/* product screenshot — anchored into the lower-right corner and oversized
+            so it bleeds off the edge, clipped by the hero's overflow-hidden */}
+        <div className="relative z-0 mt-10 px-6 sm:px-12 lg:absolute lg:bottom-0 lg:right-0 lg:mt-0 lg:w-[64%] lg:translate-x-[12%] lg:translate-y-[16%] lg:px-0">
+          <div className="overflow-hidden rounded-xl  lg:rounded-none lg:rounded-tl-2xl lg:border-b-0 lg:border-r-0">
+            <img
+              src="/img/image.png"
+              alt="The Orkestrator app managing uploaded microscopy data"
+              className="w-full"
+            />
+          </div>
         </div>
       </section>
 
-      {/* features */}
-      <section className="mx-auto w-full max-w-6xl px-6 pb-24">
+      {/* ─────────────────────── Statement ─────────────────────── */}
+      <section className="w-full my-16 flex flex-col items-center gap-6 text-center">
+        <p className="max-w-5xl text-3xl font-medium leading-snug tracking-tight text-fd-muted-foreground sm:text-4xl">
+          Arkitekt is an{' '}
+          <span className="text-fd-foreground">open-source platform</span> for{' '}
+          <span className="text-fd-foreground">microscopy</span>, beautifully
+          designed for scientists. Bringing powerful features for your imaging
+          workflows, with the flexibility to fit{' '}
+          <span className="text-fd-foreground">any lab</span>.
+        </p>
+      </section>
+
+      {/* ───────────────────────── Bento ──────────────────────── */}
+      <section className="w-full pb-16">
+        <BentoGrid>
+          {/* wide media — drop in a workflow / Orkestrator screenshot */}
+          <BentoCard className="p-2 lg:col-span-2">
+            <ScreenshotSlot
+              label="Drop a hero workflow screenshot here"
+              className="min-h-[20rem]"
+            />
+          </BentoCard>
+
+          {/* loved-by statement + showcase CTA */}
+          <BentoCard className="flex flex-col justify-between gap-8 p-8 sm:p-10">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                A platform labs love.
+              </h2>
+              <p className="mt-4 max-w-md text-fd-muted-foreground">
+                Trusted by imaging facilities and research groups — evolving
+                every day to fit the way your lab actually works.
+              </p>
+            </div>
+            <Button asChild size="lg" className="w-fit rounded-full">
+              <Link href="/showcase">
+                Showcase
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </BentoCard>
+
+          {/* testimonials */}
+          <BentoCard glow>
+            <div className="grid h-full gap-2 sm:grid-cols-2">
+              <Quote name="Researcher name" role="Imaging Facility">
+                <p>
+                  You know how every experiment ends up as a folder of one-off
+                  scripts nobody else can run?
+                </p>
+                <p>
+                  Arkitekt turns those into apps the whole group can launch —
+                  same data, same results, no glue code.
+                </p>
+              </Quote>
+              <Quote name="Researcher name" role="Core Facility Lead">
+                <p>
+                  Massive shoutout to the Arkitekt team — a datahub that finally
+                  makes streaming microscopy analysis feel composable.
+                </p>
+              </Quote>
+            </div>
+          </BentoCard>
+
+          {/* docs / app screenshot */}
+          <BentoCard glow>
+            <div className="h-full overflow-hidden rounded-2xl bg-[#0a0a0c] p-2">
+              <ScreenshotSlot
+                label="Drop a docs / Orkestrator screenshot here"
+                className="h-full min-h-[18rem] border-white/10 bg-white/5 text-white/60"
+              />
+            </div>
+          </BentoCard>
+
+          {/* customizability + install snippet */}
+          <BentoCard className="flex flex-col justify-between gap-8 p-8 sm:p-10">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Built to fit your lab, not the other way around.
+              </h2>
+              <p className="mt-4 max-w-md text-fd-muted-foreground">
+                Open-source and composable from top to bottom — swap the pieces
+                you need and connect the tools you already use.
+              </p>
+              <p className="mt-3 max-w-md text-fd-muted-foreground">
+                Spin up the whole platform with a single command.
+              </p>
+            </div>
+            <div className="rounded-xl border border-fd-border bg-[#0a0a0c] p-4 font-mono text-sm text-white/90">
+              <div className="flex items-center justify-between gap-3">
+                <span>
+                  <span className="text-fd-primary">pip install</span> arkitekt
+                </span>
+                <Copy className="size-4 shrink-0 text-white/40" />
+              </div>
+              <div className="mt-3 text-white/40">
+                &gt; Connecting to your datahub…
+              </div>
+            </div>
+          </BentoCard>
+        </BentoGrid>
+      </section>
+
+      {/* ──────────────────────── Features ─────────────────────── */}
+      <section className="w-full">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (
             <div
@@ -143,8 +258,8 @@ export default function HomePage() {
             Install the platform, walk through the tutorial, and connect your
             first tool in minutes.
           </p>
-          <Button asChild size="lg" className="mt-2">
-            <Link href="/docs/introduction/first_steps" className="text-white">
+          <Button asChild size="lg" className="mt-2 rounded-full">
+            <Link href="/docs/introduction/first_steps">
               Start the tutorial
               <ArrowRight className="size-4" />
             </Link>

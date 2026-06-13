@@ -2,6 +2,72 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
+/* Tint Fumadocs' neutral palette with the Arkitekt brand hue.
+   We override the `--color-fd-*` source variables (not the mapped aliases below) so
+   that both Fumadocs UI and the migrated Arkitekt components stay in sync.
+   Lightness values mirror Fumadocs' neutral theme to keep the "fuma" feel; a faint
+   chroma is mixed into the neutrals and the full brand chroma drives primary/ring.
+   Re-tint the whole site by editing `--brand-hue` / `--brand-chroma`. */
+:root {
+  /* Master controls */
+  --brand-hue: 267.256;
+  --brand-chroma: 0.19;
+
+  /* Neutrals: Fumadocs lightness + faint brand tint */
+  --color-fd-background: oklch(0.97 0.004 var(--brand-hue));
+  --color-fd-foreground: oklch(0.21 0.01 var(--brand-hue));
+  --color-fd-muted: oklch(0.97 0.004 var(--brand-hue));
+  --color-fd-muted-foreground: oklch(0.55 0.02 var(--brand-hue));
+  --color-fd-popover: oklch(0.985 0.004 var(--brand-hue));
+  --color-fd-popover-foreground: oklch(0.28 0.01 var(--brand-hue));
+  --color-fd-card: oklch(0.96 0.005 var(--brand-hue));
+  --color-fd-card-foreground: oklch(0.21 0.01 var(--brand-hue));
+  --color-fd-border: oklch(0.87 0.008 var(--brand-hue) / 0.5);
+  --color-fd-secondary: oklch(0.95 0.006 var(--brand-hue));
+  --color-fd-secondary-foreground: oklch(0.25 0.01 var(--brand-hue));
+  --color-fd-accent: oklch(0.87 0.01 var(--brand-hue) / 0.5);
+  --color-fd-accent-foreground: oklch(0.25 0.01 var(--brand-hue));
+
+  /* Brand accents */
+  --color-fd-primary: oklch(0.48 var(--brand-chroma) var(--brand-hue));
+  --color-fd-primary-foreground: oklch(0.98 0.01 var(--brand-hue));
+  --color-fd-ring: oklch(0.55 calc(var(--brand-chroma) * 0.6) var(--brand-hue));
+
+  /* Logo cube faces — derived from the brand hue so the mark re-tints with the theme */
+  --brand-logo-light: oklch(0.6 calc(var(--brand-chroma) * 0.9) var(--brand-hue));
+  --brand-logo-mid: oklch(0.52 var(--brand-chroma) var(--brand-hue));
+  --brand-logo-dark: oklch(0.46 var(--brand-chroma) var(--brand-hue));
+}
+
+.dark {
+  /* Single brand hue: violet in dark too */
+  --brand-hue: 267.256;
+  --brand-chroma: 0.16;
+
+  --color-fd-background: oklch(0.16 0.008 var(--brand-hue));
+  --color-fd-foreground: oklch(0.94 0.005 var(--brand-hue));
+  --color-fd-muted: oklch(0.22 0.008 var(--brand-hue));
+  --color-fd-muted-foreground: oklch(0.71 0.01 var(--brand-hue) / 0.85);
+  --color-fd-popover: oklch(0.20 0.008 var(--brand-hue));
+  --color-fd-popover-foreground: oklch(0.90 0.005 var(--brand-hue));
+  --color-fd-card: oklch(0.19 0.008 var(--brand-hue));
+  --color-fd-card-foreground: oklch(0.98 0.005 var(--brand-hue));
+  --color-fd-border: oklch(0.55 0.01 var(--brand-hue) / 0.2);
+  --color-fd-secondary: oklch(0.22 0.008 var(--brand-hue));
+  --color-fd-secondary-foreground: oklch(0.94 0.005 var(--brand-hue));
+  --color-fd-accent: oklch(0.45 0.01 var(--brand-hue) / 0.3);
+  --color-fd-accent-foreground: oklch(0.92 0.005 var(--brand-hue));
+
+  --color-fd-primary: oklch(0.70 var(--brand-chroma) var(--brand-hue));
+  --color-fd-primary-foreground: oklch(0.16 0.02 var(--brand-hue));
+  --color-fd-ring: oklch(0.60 calc(var(--brand-chroma) * 0.6) var(--brand-hue));
+
+  /* Logo cube faces — slightly brighter so the mark reads on dark surfaces */
+  --brand-logo-light: oklch(0.72 calc(var(--brand-chroma) * 0.9) var(--brand-hue));
+  --brand-logo-mid: oklch(0.64 var(--brand-chroma) var(--brand-hue));
+  --brand-logo-dark: oklch(0.56 var(--brand-chroma) var(--brand-hue));
+}
+
 /* Map the ported shadcn/Arkitekt design tokens onto Fumadocs' theme variables
    so the migrated login UI + components inherit the docs theme. */
 @theme inline {
@@ -38,4 +104,9 @@ html {
 html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* Fractal-noise grain used by the landing hero overlay. */
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }

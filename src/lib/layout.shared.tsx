@@ -1,20 +1,51 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import { Connector } from '@/components/arkitekt-connector';
+import { Atom, BookOpen, Newspaper, Sparkles } from 'lucide-react';
+import { BrandColorPicker } from '@/components/brand-color';
+import { Logo } from '@/components/logo';
 import { appName, gitConfig } from './shared';
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
       // JSX supported
-      title: appName,
+      title: (
+        <>
+          <Logo className="size-6" />
+          <span className="font-semibold">{appName}</span>
+        </>
+      ),
     },
-    githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
     links: [
+      {
+        text: 'Docs',
+        url: '/docs',
+        active: 'nested-url',
+        icon: <BookOpen />,
+      },
+      {
+        text: 'Blog',
+        url: '/blog',
+        active: 'nested-url',
+        icon: <Newspaper />,
+      },
+      {
+        text: 'Showcase',
+        url: '/showcase',
+        active: 'nested-url',
+        icon: <Sparkles />,
+      },
+      {
+        text: 'Shoulders of Giants',
+        url: '/giants',
+        active: 'nested-url',
+        icon: <Atom />,
+      },
       {
         type: 'custom',
         secondary: true,
-        children: <Connector />,
+        children: <BrandColorPicker />,
       },
     ],
+    githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }

@@ -108,7 +108,7 @@ export const enhanceManifest = async (
   // Add any enhancements to the manifest here
   let node_id: string | undefined = undefined;
   try {
-    node_id = await window.api.getNodeId();
+    node_id = "node-" + manifest.identifier.toLowerCase().replace(/\s+/g, "-");
   } catch (e) {
     console.error("Failed to get node ID:", e);
     node_id = undefined
