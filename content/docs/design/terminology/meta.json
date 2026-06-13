@@ -1,0 +1,18 @@
+{
+  "title": "Terminology",
+  "pages": [
+    "index",
+    "app",
+    "manifest",
+    "node",
+    "scheduler",
+    "structure",
+    "template",
+    "workflow",
+    "apps_vs_services",
+    "assignation",
+    "port",
+    "provision",
+    "reservation"
+  ]
+}

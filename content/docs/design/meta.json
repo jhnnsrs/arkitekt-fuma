@@ -1,0 +1,20 @@
+{
+  "title": "Design",
+  "pages": [
+    "index",
+    "why",
+    "api",
+    "scheduling",
+    "version",
+    "middleman",
+    "configuration",
+    "security",
+    "realtime",
+    "deployment",
+    "services",
+    "terminology",
+    "various",
+    "vs",
+    "why-not"
+  ]
+}

@@ -18,6 +18,7 @@ export const docs = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
-    // MDX options
+    // Docusaurus `:::` admonitions were converted to <Callout> at migration
+    // time (see scripts/convert-admonitions.mjs).
   },
 });

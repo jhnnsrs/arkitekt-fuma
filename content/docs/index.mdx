@@ -1,13 +1,111 @@
 ---
-title: Hello World
-description: Your first document
+title: Arkitekt Docs
+description: Documentation for the Arkitekt bioimage analysis platform — get started, learn the design, follow tutorials, and build apps.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-## What is Next?
+# Arkitekt Docs
 
-<Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
-</Cards>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <Card>
+    <CardHeader>
+      <CardTitle>Get Started</CardTitle>
+      <CardDescription>Just getting started with Arkitekt?</CardDescription>
+    </CardHeader>
+    <CardContent>
+      If you want to use the latest platform features, you should use the
+      Installation Guide to get started.
+    </CardContent>
+    <CardFooter>
+      <Button asChild className="w-full">
+        <a href="/docs/introduction/installation" style={{color: "white"}}>Get Started</a>
+      </Button>
+    </CardFooter>
+  </Card>
+
+  <Card>
+    <CardHeader>
+      <CardTitle>Technical Design</CardTitle>
+      <CardDescription>I'm just curious...</CardDescription>
+    </CardHeader>
+    <CardContent>
+      Start with the Technical Explanation. Arkitekt is a bioimage analysis
+      platform that we like to call a "middleman". It blends user-friendly
+      interfaces with complex analysis tools in a unique way that deserves some
+      explanation!
+    </CardContent>
+    <CardFooter>
+        <Button asChild variant="secondary" className="w-full">
+            <a href="/docs/design/why">Read Technical Explanation</a>
+        </Button>
+    </CardFooter>
+  </Card>
+
+  <Card>
+    <CardHeader>
+      <CardTitle>Tutorials</CardTitle>
+      <CardDescription>I want to try it out...</CardDescription>
+    </CardHeader>
+    <CardContent>
+      Spend your first few minutes with Arkitekt in the Tutorial. It introduces
+      the core features as quickly as possible. You'll see data
+      management, analysis execution, and dashboarding in action.
+    </CardContent>
+    <CardFooter>
+        <Button asChild variant="secondary" className="w-full">
+            <a href="/docs/introduction/first_steps">Start Tutorial</a>
+        </Button>
+    </CardFooter>
+  </Card>
+
+  <Card>
+    <CardHeader>
+      <CardTitle>Developer Guide</CardTitle>
+      <CardDescription>I'm in, let's go.</CardDescription>
+    </CardHeader>
+    <CardContent>
+      The Developer Guide will help you get a deep understanding of Arkitekt.
+      Get yourself a drink and some snacks then dive deep into building better
+      bioimage apps with Arkitekt.
+    </CardContent>
+    <CardFooter>
+        <Button asChild variant="secondary" className="w-full">
+            <a href="/docs/developers">Go to Developer Guide</a>
+        </Button>
+    </CardFooter>
+  </Card>
+</div>
+
+<div className="mt-8">
+  <Card>
+    <CardHeader>
+      <CardTitle>Community & Support</CardTitle>
+      <CardDescription>I'm stuck! Need help? Want to contribute?</CardDescription>
+    </CardHeader>
+    <CardContent>
+      Arkitekt is developed in the open with a helpful community. Come and see
+      where to find us on GitHub, follow along with Arkitekt development,
+      get help, and contribute back!
+    </CardContent>
+    <CardFooter className="flex gap-2">
+        <Button asChild variant="outline">
+            <a href="/docs/troubleshooting">Troubleshooting</a>
+        </Button>
+        <Button asChild variant="outline">
+            <a href="/docs/developers/contribute">Contribute</a>
+        </Button>
+        <Button asChild variant="outline">
+            <a href="/docs/roadmap">Roadmap</a>
+        </Button>
+    </CardFooter>
+  </Card>
+</div>
