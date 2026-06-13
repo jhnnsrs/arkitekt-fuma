@@ -1,0 +1,60 @@
+/* Retint GraphiQL (CodeMirror-based v4) so it blends into the Fumadocs / Arkitekt
+   violet theme instead of GraphiQL's stock pink-on-slate look.
+
+   GraphiQL composes every surface from a handful of HSL-triple custom properties
+   (`hsl(var(--color-base))` etc). We can't feed it the site's oklch tokens, so we
+   approximate the brand hue (~267, violet) here. The `forcedTheme` prop on the
+   <GraphiQL> component keeps the body `graphiql-light` / `graphiql-dark` class in
+   sync with next-themes, and these overrides — imported after GraphiQL's own CSS —
+   win on source order at equal specificity. */
+
+.graphiql-container,
+.graphiql-container .CodeMirror-info,
+.CodeMirror-lint-tooltip,
+.graphiql-dialog,
+.graphiql-dialog-overlay,
+.graphiql-tooltip,
+[data-radix-popper-content-wrapper] {
+  --color-primary: 265, 72%, 48%;
+  --color-secondary: 252, 60%, 58%;
+  --color-tertiary: 188, 78%, 38%;
+  --color-base: 270, 33%, 99%;
+  --color-neutral: 267, 16%, 22%;
+
+  --font-family: inherit;
+  --border-radius-4: 6px;
+  --border-radius-8: 10px;
+  --border-radius-12: 12px;
+}
+
+/* Dark mode: Fumadocs toggles `.dark` on <html>; we force GraphiQL to match, so
+   target the same scope and lift the neutrals/primary to read on dark violet. */
+.dark .graphiql-container,
+.dark .CodeMirror-info,
+.dark .CodeMirror-lint-tooltip,
+.dark .graphiql-dialog,
+.dark .graphiql-dialog-overlay,
+.dark .graphiql-tooltip,
+.dark [data-radix-popper-content-wrapper] {
+  --color-primary: 265, 95%, 76%;
+  --color-secondary: 252, 90%, 78%;
+  --color-tertiary: 188, 85%, 50%;
+  --color-base: 268, 26%, 11%;
+  --color-neutral: 267, 14%, 88%;
+}
+
+/* Let the explorer sit flush inside our own card chrome. */
+.arkitekt-graphiql .graphiql-container {
+  height: 100%;
+  background: transparent;
+}
+
+/* We supply our own header + service switcher, so hide GraphiQL's wordmark. */
+.arkitekt-graphiql .graphiql-logo {
+  display: none;
+}
+
+/* Soften the divider between the sidebar/editor and the response pane. */
+.arkitekt-graphiql .graphiql-sessions {
+  border-radius: 0;
+}

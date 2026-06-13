@@ -1,5 +1,5 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import { Atom, BookOpen, Newspaper, Sparkles } from 'lucide-react';
+import { Atom, BookOpen, Network, Newspaper, Sparkles } from 'lucide-react';
 import { BrandColorPicker } from '@/components/brand-color';
 import { Logo } from '@/components/logo';
 import { appName, gitConfig } from './shared';
@@ -27,6 +27,12 @@ export function baseOptions(): BaseLayoutProps {
         url: '/blog',
         active: 'nested-url',
         icon: <Newspaper />,
+      },
+      {
+        text: 'Explorer',
+        url: '/explorer',
+        active: 'nested-url',
+        icon: <Network />,
       },
       {
         text: 'Showcase',
