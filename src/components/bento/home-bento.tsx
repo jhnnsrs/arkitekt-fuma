@@ -28,11 +28,10 @@ export function HomeBento() {
         <BentoCard className="flex flex-col justify-between gap-6 p-6 sm:p-8">
           <div>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Used in imaging facilities.
+              Want to see Arkitekt in action?
             </h2>
             <p className="mt-3 max-w-md text-sm text-fd-muted-foreground">
-              Imaging facilities and research groups use Arkitekt to broker data
-              and compute across the tools they already run.
+              Look at these examples. Maybe they can illustrate things better than words.
             </p>
           </div>
           <Button asChild className="w-fit rounded-full">
@@ -41,18 +40,6 @@ export function HomeBento() {
               <ArrowRight className="size-4" />
             </Link>
           </Button>
-        </BentoCard>
-
-        {/* product screenshot */}
-        <BentoCard glow>
-          <div className="h-full overflow-hidden rounded-2xl bg-[#0a0a0c] p-2">
-            <ScreenshotSlot
-              src="/docs/core.png"
-              alt="The Arkitekt platform interface"
-              className="h-full min-h-52"
-              imgClassName="h-full rounded-xl object-cover"
-            />
-          </div>
         </BentoCard>
 
         {/* provenance — everything is audited & recorded */}
@@ -79,7 +66,7 @@ export function HomeBento() {
         </BentoCard>
 
         {/* live install recording */}
-        <BentoCard className="flex items-center justify-center p-4 sm:col-span-2 sm:p-6">
+        <BentoCard className="flex flex-col gap-5 p-6 sm:p-8">
           <Terminal src="/casts/arkitekt-init.cast" autoPlay loop speed={1.5} />
         </BentoCard>
       </BentoGrid>

@@ -22,11 +22,11 @@ import { Input } from "@/components/ui/input";
 
 const explorer = explorerPlugin({} as any);
 
-/** Convert a computed `rgb(r, g, b)` string to an `H, S%, L%` triple for GraphiQL. */
-const rgbToHslTriple = (rgb: string): string | null => {
-  const m = rgb.match(/[\d.]+/g);
-  if (!m || m.length < 3) return null;
-  const [r, g, b] = m.slice(0, 3).map((v) => Number(v) / 255);
+/** Convert sRGB bytes (0–255) to GraphiQL's `H, S%, L%` triple. */
+const rgbToHslTriple = (r8: number, g8: number, b8: number): string => {
+  const r = r8 / 255;
+  const g = g8 / 255;
+  const b = b8 / 255;
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const l = (max + min) / 2;
@@ -51,33 +51,79 @@ const rgbToHslTriple = (rgb: string): string | null => {
 };
 
 /**
- * Mirror the site's live `--color-fd-primary` brand token into the custom
- * properties GraphiQL's stylesheet reads, so the explorer's accents follow the
- * dynamic brand hue (and light/dark) instead of GraphiQL's stock pink. Resolving
- * the token via a probe element turns the site's oklch value into rgb, which we
- * convert to the HSL triple GraphiQL expects.
+ * Resolve a site CSS custom property to GraphiQL's `H, S%, L%` triple.
+ *
+ * The site's tokens are `oklch(...)`, and `getComputedStyle().color` may serialize
+ * back as `oklch(...)`/`color(srgb …)` (not `rgb(...)`) depending on the browser —
+ * so we can't string-parse it as RGB. Instead we paint the resolved color onto a
+ * 1×1 canvas, which always reads back as sRGB bytes regardless of the input space.
  */
-const useGraphiqlBrandSync = () => {
+const resolveTriple = (cssVar: string): string | null => {
+  const probe = document.createElement("span");
+  probe.style.color = `var(${cssVar})`;
+  probe.style.display = "none";
+  document.body.appendChild(probe);
+  const computed = getComputedStyle(probe).color;
+  document.body.removeChild(probe);
+  if (!computed) return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 1;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = "#000";
+  ctx.fillStyle = computed; // canvas accepts any CSS color space, normalizes to sRGB
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return rgbToHslTriple(r, g, b);
+};
+
+/**
+ * Mirror the site's live design tokens into the custom properties GraphiQL's
+ * stylesheet reads, so the explorer is literally the same palette as the rest of
+ * the page — neutral dark surfaces and the dynamic brand accent — instead of
+ * GraphiQL's stock saturated-purple/pink theme. We resolve each token through a
+ * probe element (turning the site's oklch values into rgb) and convert to the
+ * HSL triples GraphiQL expects. Tracks the brand hue and light/dark.
+ */
+const useGraphiqlThemeSync = () => {
   const { resolvedTheme } = useTheme();
   React.useEffect(() => {
-    const probe = document.createElement("span");
-    probe.style.color = "var(--color-fd-primary)";
-    probe.style.display = "none";
-    document.body.appendChild(probe);
-    const rgb = getComputedStyle(probe).color;
-    document.body.removeChild(probe);
-
-    const triple = rgbToHslTriple(rgb);
-    if (!triple) return;
-    const [h, s, l] = triple.split(",").map((p) => parseFloat(p));
     const root = document.documentElement.style;
-    root.setProperty("--ark-gql-primary", triple);
-    // a softer companion accent for links / secondary chrome
-    const sl = Math.min(96, l + (resolvedTheme === "dark" ? 8 : 10));
-    root.setProperty(
-      "--ark-gql-secondary",
-      `${h}, ${Math.max(0, s - 12)}%, ${sl}%`,
-    );
+
+    // Surfaces + text: the near-neutral page background and foreground. These
+    // drive every GraphiQL panel, so getting them right kills the purple slab.
+    const base = resolveTriple("--color-fd-background");
+    const neutral = resolveTriple("--color-fd-foreground");
+    if (base) root.setProperty("--ark-gql-base", base);
+    if (neutral) root.setProperty("--ark-gql-neutral", neutral);
+
+    // Accent: the brand primary, plus a softer companion for secondary chrome.
+    const primary = resolveTriple("--color-fd-primary");
+    if (primary) {
+      root.setProperty("--ark-gql-primary", primary);
+      const [h, s, l] = primary.split(",").map((p) => parseFloat(p));
+      const dark = resolvedTheme === "dark";
+      const sl = Math.min(96, l + (dark ? 8 : 10));
+      root.setProperty(
+        "--ark-gql-secondary",
+        `${h}, ${Math.max(0, s - 12)}%, ${sl}%`,
+      );
+
+      // Syntax palette: each token hue is the brand hue plus an offset, so the
+      // editor reads as a cohesive brand-tinted scheme (keyword on-brand, the
+      // rest complementary/triadic) instead of flat white — and re-tints with
+      // the brand. Lightness flips for light vs dark so it stays legible.
+      const syn = (offset: number, sat: number, lDark: number, lLight: number) =>
+        `hsl(${Math.round((((h + offset) % 360) + 360) % 360)}, ${sat}%, ${
+          dark ? lDark : lLight
+        }%)`;
+      root.setProperty("--ark-cm-keyword", syn(0, Math.max(s, 60), 74, 47));
+      root.setProperty("--ark-cm-field", syn(185, 50, 82, 45)); // complement
+      root.setProperty("--ark-cm-arg", syn(150, 52, 80, 45));
+      root.setProperty("--ark-cm-string", syn(210, 46, 80, 44));
+      root.setProperty("--ark-cm-number", syn(120, 56, 80, 46));
+    }
   }, [resolvedTheme]);
 };
 
@@ -326,7 +372,7 @@ const ExplorerConnect = () => {
 };
 
 export const Graph = (_props: Record<string, unknown>) => {
-  useGraphiqlBrandSync();
+  useGraphiqlThemeSync();
   return (
     <div className="h-full min-h-0 w-full overflow-hidden">
       <App.Guard notConnectedFallback={<ExplorerConnect />}>

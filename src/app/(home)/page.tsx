@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoreBento, HomeBento } from '@/components/bento';
-import { Ecosystem } from '@/components/marketing';
-import { RobotScene } from '@/components/marketing';
+import { Ecosystem, EcosystemOrbit, RobotScene } from '@/components/marketing';
 import { gitConfig } from '@/lib/shared';
 
 const features = [
@@ -135,11 +134,16 @@ export default function HomePage() {
         </p>
       </section>
 
+
+      {/* ─────────────────── Ecosystem orbit map ────────────────── */}
+      <EcosystemOrbit />
+
       {/* ────────────────────── Ecosystem ──────────────────────── */}
       <Ecosystem />
 
       {/* ───────────────────────── Bento ──────────────────────── */}
       <HomeBento />
+
 
       {/* ─────────────────────── Orchestration ─────────────────── */}
       <section className="w-full pb-16">

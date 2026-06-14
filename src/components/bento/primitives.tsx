@@ -42,7 +42,7 @@ export function BentoCard({
     return (
       <div
         className={cn(
-          'rounded-3xl bg-fd-primary p-2 shadow-[0_0_90px_-25px_var(--color-fd-primary)]',
+          'rounded-3xl border-primary/40 border-1 overflow-hidden shadow-[0_0_20px_-10px_var(--color-fd-primary)]',
           className,
         )}
       >

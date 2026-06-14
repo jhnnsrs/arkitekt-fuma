@@ -6,7 +6,7 @@ import { BentoCard } from './primitives';
 
 // How many planes the fake action streams, and the hues its yielded "images"
 // cycle through so each tile reads as a different microscopy plane.
-const PLANES = 10;
+const PLANES = 5;
 const hues = [195, 268, 90, 350, 150];
 
 // Deterministic per-tile pseudo-random so the texture is stable across renders

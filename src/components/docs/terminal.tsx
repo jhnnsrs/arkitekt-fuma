@@ -50,7 +50,7 @@ export const InnerTerminal = ({
   return (
     <div
       className="coding inverse-toggle px-1 py-1 shadow-lg text-gray-100 text-sm
-              bg-[#121314] rounded-lg leading-normal overflow-hidden"
+              bg-[#121314] rounded-lg leading-normal overflow-hidden w-full h-full rounded-lg shadow-lg rounded"
     >
       <div className="top mb-2 mt-1 flex">
         <div className="h-2 w-2 bg-red-500 rounded-full"></div>
