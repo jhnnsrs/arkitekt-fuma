@@ -8,17 +8,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  FlaskConical,
   LineChart,
   Layers,
+  Microscope,
   Network,
   Pause,
   Play,
   Plus,
+  Scan,
   Share2,
-  Split,
+  Sparkles,
+  Tag,
   User,
   Workflow,
-  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useInView } from './reveal';
@@ -67,11 +70,11 @@ const services: Node[] = [
 // The AI Agent is one of the apps (just another caller of actions).
 const apps: Node[] = [
   { label: 'Acquire', sub: 'Capture from the scope', tech: 'µManager', icon: Aperture, hue: 195, href: '/docs/apps/standalones/mikro-manager' },
-  { label: 'Process', sub: 'Prepare & clean data', tech: 'Python', icon: Workflow, hue: 92, href: '/docs/developers/python' },
+  { label: 'Process', sub: 'Denoise & restore', tech: 'Python', icon: Workflow, hue: 92, href: '/docs/developers/python' },
   { label: 'Segment', sub: 'Find the objects', tech: 'Docker', icon: Box, hue: 250, href: '/docs/apps/plugins/segmentor' },
-  { label: 'Analyze', sub: 'Quantify results', tech: 'Jupyter', icon: LineChart, hue: 40, href: '/docs/developers/python/classical' },
+  { label: 'Analyze', sub: 'Measure & quantify', tech: 'Jupyter', icon: LineChart, hue: 40, href: '/docs/developers/python/classical' },
   { label: 'Visualize', sub: 'Inspect & validate', tech: 'napari', icon: Eye, hue: 320, href: '/docs/apps/standalones/mikro-napari' },
-  { label: 'React', sub: 'Edge automation', tech: 'Raspberry Pi', icon: Zap, hue: 150, bidi: true, href: '/docs/apps' },
+  { label: 'Protocol', sub: 'Adaptive routine', tech: 'custom', icon: FlaskConical, hue: 25, href: '/docs/developers/python/plugin' },
   { label: 'AI Agent', sub: 'Plans & runs workflows', tech: 'LLM', icon: Bot, hue: 292, href: '/docs/apps' },
   { label: 'Your app', sub: 'Bring your own', icon: Plus, placeholder: true, href: '/docs/developers/python/plugin' },
 ];
@@ -120,17 +123,19 @@ function wedge(a0: number, a1: number, ri: number, ro: number) {
   ].join(' ');
 }
 
-// Selectable "user stories" — pick whose perspective to watch.
+// Selectable "user stories" — real bioimaging tasks a scientist might ask for.
 const STORIES = [
-  { id: 'manual', title: 'I run it myself', blurb: 'Trigger an action from the UI.', icon: User },
-  { id: 'agent', title: 'An AI agent runs it', blurb: 'An agent orchestrates the workflow.', icon: Bot },
-  { id: 'parallel', title: 'Two tasks at once', blurb: 'Kick off parallel tasks in one go.', icon: Split },
-  { id: 'reactive', title: 'The instrument reacts', blurb: 'A device streams data & steers acquisition.', icon: Zap },
+  { id: 'acquire', title: 'Acquire an image', blurb: 'Grab a fresh image from the scope.', icon: Microscope },
+  { id: 'segment', title: 'Segment this image', blurb: 'Find the cells in an image.', icon: Scan },
+  { id: 'classify', title: 'What is this?', blurb: 'Tag it in the knowledge graph.', icon: Tag },
+  { id: 'enhance', title: 'See it better', blurb: 'Let an AI agent clean it up.', icon: Sparkles },
+  { id: 'smart', title: 'Smart microscopy', blurb: 'Run an adaptive imaging protocol.', icon: FlaskConical },
 ] as const;
 type StoryId = (typeof STORIES)[number]['id'];
 
 type Pt = { x: number; y: number };
 type Flow = { id: number; from: Pt; to: Pt; color: string; progress: number };
+type Datum = { kind: 'image' | 'mask' | 'graph' | 'plot'; label: string; clean?: boolean };
 
 /* ─── Step graph ────────────────────────────────────────────────────────────
    Each story is a reproducible list of declarative Steps. A step describes the
@@ -149,176 +154,170 @@ type Step = {
   fill?: string; // an app whose progress bar fills 0→1 during the enter phase…
   fills?: string[]; // …or several at once (parallel)
   user?: string; // a command the User node speaks during this step
+  datum?: Datum; // a primitive render of the data this step produces (persists)
+  datumAt?: string; // where the datum currently sits: an app label or 'user' (persists)
   dur?: number; // enter-animation length (ms)
   hold?: number; // pause after settling before auto-advancing (ms)
 };
 
 // One brokered task: in → Rekuest routes → dispatch → work → upload → Mikro
-// saves → finished. The service steps (Rekuest routing, Mikro saving) make the
-// core's role explicit; "finished" deliberately comes after the save.
-function brokerSteps(title: string, srcPt: Pt, srcDeg: number, t: number, inColor: string, descIn: string, descRun: string): Step[] {
+// saves → finished. The service steps make the core's role explicit; "finished"
+// deliberately comes after the save. `produces` is the datum the app yields (it
+// appears while the app runs and persists onward).
+function brokerSteps(title: string, srcPt: Pt, srcDeg: number, t: number, inColor: string, descIn: string, descRun: string, produces?: Datum, input?: Datum): Step[] {
   const label = apps[t].label;
   const ang = appAngle(t);
+  // datum lives in Mikro before & after the run; it only sits on the device
+  // while that device is actually running.
+  const inMikro = input ? { datum: input, datumAt: 'Mikro' } : {};
+  const out = produces ? { datum: produces, datumAt: 'Mikro' } : {};
   return [
-    { title, desc: descIn, hot: ['server'], edge: { from: srcPt, to: serverEdge(srcDeg), color: inColor }, dur: 540, hold: 220 },
-    { title, desc: 'Rekuest routes the request to the right app.', hot: ['Rekuest', 'server'], hold: 650 },
-    { title, desc: descRun, hot: [label], edge: { from: serverEdge(ang), to: spokeOuter(t), color: appColor(t) }, bubbles: [{ label, text: 'Action received — starting…', progress: 0 }], dur: 540, hold: 450 },
-    { title, desc: `${label} is running…`, hot: [label], bubbles: [{ label, text: 'Running…', progress: 1 }], fill: label, dur: 1100, hold: 250 },
-    { title, desc: `${label} uploads its results to the server…`, hot: [label, 'server'], edge: { from: spokeOuter(t), to: serverEdge(ang), color: DATA }, bubbles: [{ label, text: 'Uploading data…', progress: 1 }], dur: 600, hold: 250 },
-    { title, desc: 'Mikro saves the results to the database.', hot: ['Mikro', 'server'], bubbles: [{ label, text: 'Saving…', progress: 1 }], hold: 650 },
-    { title, desc: `Data stored — ${label} finished ✓`, hot: [label, 'Mikro', 'server'], bubbles: [{ label, text: 'Finished ✓ · stored', progress: 1 }], hold: 700 },
+    { title, desc: descIn, hot: ['server'], edge: { from: srcPt, to: serverEdge(srcDeg), color: inColor }, ...inMikro, dur: 540, hold: 220 },
+    { title, desc: 'Rekuest routes the request to the right app.', hot: ['Rekuest', 'server'], ...inMikro, hold: 650 },
+    { title, desc: descRun, hot: [label], edge: { from: serverEdge(ang), to: spokeOuter(t), color: appColor(t) }, bubbles: [{ label, text: 'Action received — starting…', progress: 0 }], ...inMikro, dur: 540, hold: 450 },
+    { title, desc: `${label} is running…`, hot: [label], bubbles: [{ label, text: 'Running…', progress: 1 }], fill: label, datum: produces, datumAt: produces ? label : undefined, dur: 1100, hold: 250 },
+    { title, desc: `${label} uploads its results to the server…`, hot: [label, 'Mikro', 'server'], edge: { from: spokeOuter(t), to: serverEdge(ang), color: DATA }, bubbles: [{ label, text: 'Uploading data…', progress: 1 }], ...out, dur: 600, hold: 250 },
+    { title, desc: 'Mikro saves the results to the database.', hot: ['Mikro', 'server'], bubbles: [{ label, text: 'Saving…', progress: 1 }], ...out, hold: 650 },
+    { title, desc: `Data stored — ${label} finished ✓`, hot: ['Mikro', 'server'], bubbles: [{ label, text: 'Finished ✓ · stored', progress: 1 }], ...out, hold: 700 },
   ];
 }
 
-// Final beat of a user-driven story: the server hands the results back to the user.
-function deliverStep(title: string): Step {
+// Final beat of a user-driven story: the result is handed from Mikro to the user.
+function deliverStep(title: string, datum?: Datum): Step {
   return {
     title,
-    desc: 'Your results are delivered straight back to you.',
-    hot: ['server'],
+    desc: 'Your results are handed from the server (Mikro) back to you.',
+    hot: ['Mikro', 'server'],
     edge: { from: serverEdge(270), to: { x: ENTRY.x + 34, y: ENTRY.y }, color: DATA },
     user: 'here they are :)',
+    datum,
+    datumAt: 'user',
     dur: 620,
     hold: 1900,
   };
 }
 
-function manualSteps(): Step[] {
-  const T = 'Run · user-driven';
+// ── Story 1: acquire an image ──────────────────────────────────────────────
+function acquireSteps(): Step[] {
+  const T = 'Acquire an image';
+  const image: Datum = { kind: 'image', label: 'fresh acquisition' };
   return [
-    { title: T, desc: 'The user issues an action from the UI.', hot: [], user: 'do this task', hold: 1000 },
-    ...brokerSteps(T, ENTRY, 270, findApp('Process'), CTRL, 'The action travels to the Arkitekt server.', 'The server dispatches it to the Process app.'),
-    deliverStep(T),
+    { title: T, desc: 'You ask the platform to capture an image of your sample.', hot: [], user: 'acquire an image of my sample', hold: 1000 },
+    ...brokerSteps(T, ENTRY, 270, findApp('Acquire'), CTRL, 'The request travels to the Arkitekt server.', 'The server tells the Acquire app to grab a frame.', image),
+    deliverStep(T, image),
   ];
 }
 
-function agentSteps(): Step[] {
-  const T = 'Run · agent-driven';
+// ── Story 2: segment an existing image ─────────────────────────────────────
+function segmentSteps(): Step[] {
+  const T = 'Segment this image';
+  const image: Datum = { kind: 'image', label: 'input image' };
+  const mask: Datum = { kind: 'mask', label: 'segmentation mask' };
+  return [
+    { title: T, desc: 'You have an image (already in Mikro) and want the cells found.', hot: ['Mikro'], user: 'segment the cells in here', datum: image, datumAt: 'Mikro', hold: 1000 },
+    ...brokerSteps(T, ENTRY, 270, findApp('Segment'), CTRL, 'The request travels to the Arkitekt server.', 'The server hands it to the Segment app.', mask, image),
+    deliverStep(T, mask),
+  ];
+}
+
+// ── Story 3: classify / annotate into the knowledge graph (Kraph) ──────────
+function classifySteps(): Step[] {
+  const T = 'What is this?';
+  const image: Datum = { kind: 'image', label: 'the image' };
+  const graph: Datum = { kind: 'graph', label: 'knowledge graph' };
+  return [
+    { title: T, desc: 'You tell the platform what an image (already in Mikro) contains.', hot: ['Mikro'], user: 'this image is a chicken 🐔', datum: image, datumAt: 'Mikro', hold: 1000 },
+    { title: T, desc: 'The annotation travels to the Arkitekt server.', hot: ['server'], edge: { from: ENTRY, to: serverEdge(270), color: CTRL }, datum: image, datumAt: 'Mikro', dur: 540, hold: 220 },
+    { title: T, desc: 'Rekuest routes the annotation to Kraph.', hot: ['Rekuest', 'server'], datum: image, datumAt: 'Mikro', hold: 650 },
+    { title: T, desc: 'Kraph links the image to the entity “Chicken” in the knowledge graph.', hot: ['Kraph', 'server'], datum: graph, datumAt: 'Mikro', hold: 1000 },
+    { title: T, desc: 'Mikro keeps the image; Kraph keeps the relationship.', hot: ['Mikro', 'Kraph', 'server'], datum: graph, datumAt: 'Mikro', hold: 750 },
+    deliverStep(T, graph),
+  ];
+}
+
+// ── Story 4: "see it better" — the AI agent calls three apps ───────────────
+function enhanceSteps(): Step[] {
+  const T = 'See it better';
   const ag = findApp('AI Agent');
   const agA = appAngle(ag);
-  const targets = ['Acquire', 'Segment', 'Visualize'];
+  const noisy: Datum = { kind: 'image', label: 'noisy image' };
+  const atMikro = { datum: noisy, datumAt: 'Mikro' };
   const steps: Step[] = [
-    { title: T, desc: 'The user instructs the AI agent to run a workflow.', hot: [], user: 'agent, run this workflow', hold: 1000 },
-    { title: T, desc: 'The request is brokered by the server to the AI agent.', hot: ['server'], edge: { from: ENTRY, to: serverEdge(270), color: CTRL }, dur: 540, hold: 220 },
-    { title: T, desc: 'The server hands the request to the agent.', hot: ['AI Agent'], edge: { from: serverEdge(agA), to: spokeOuter(ag), color: AGENT }, bubbles: [{ label: 'AI Agent', text: 'Request received', progress: 0 }], dur: 540, hold: 400 },
-    { title: T, desc: 'The agent plans the workflow…', hot: ['AI Agent'], bubbles: [{ label: 'AI Agent', text: 'Planning the workflow…', progress: 1 }], fill: 'AI Agent', dur: 1100, hold: 300 },
-    { title: T, desc: 'Plan ready — the agent calls each app via the server.', hot: ['AI Agent'], bubbles: [{ label: 'AI Agent', text: 'Plan ready ✓', progress: 1 }], hold: 600 },
+    { title: T, desc: 'You ask the AI agent to make a noisy image (in Mikro) clearer.', hot: ['Mikro'], user: 'how can I see this better?', ...atMikro, hold: 1000 },
+    { title: T, desc: 'The request is brokered by the server to the AI agent.', hot: ['server'], edge: { from: ENTRY, to: serverEdge(270), color: CTRL }, ...atMikro, dur: 540, hold: 220 },
+    { title: T, desc: 'The server hands the request to the agent.', hot: ['AI Agent'], edge: { from: serverEdge(agA), to: spokeOuter(ag), color: AGENT }, bubbles: [{ label: 'AI Agent', text: 'Request received', progress: 0 }], ...atMikro, dur: 540, hold: 400 },
+    { title: T, desc: 'The agent plans a denoise → enhance → view pipeline.', hot: ['AI Agent'], bubbles: [{ label: 'AI Agent', text: 'Planning…', progress: 1 }], fill: 'AI Agent', ...atMikro, dur: 1100, hold: 300 },
   ];
-  targets.forEach((label, k) => {
-    const sub = brokerSteps(T, spokeOuter(ag), agA, findApp(label), AGENT, `The agent calls ${label} through the server.`, `${label} runs and returns its data.`);
-    for (const s of sub) steps.push({ ...s, bubbles: [...(s.bubbles ?? []), { label: 'AI Agent', text: `Calling ${label}… (${k + 1}/${targets.length})`, progress: (k + 0.5) / targets.length }] });
-    // the server reports the finished result back to the agent
+  const plan: { label: string; run: string; produces: Datum }[] = [
+    { label: 'Process', run: 'Process denoises the raw image.', produces: { kind: 'image', label: 'denoised', clean: true } },
+    { label: 'Analyze', run: 'Analyze boosts the contrast.', produces: { kind: 'image', label: 'enhanced', clean: true } },
+    { label: 'Visualize', run: 'Visualize renders a clean view.', produces: { kind: 'image', label: 'clear view', clean: true } },
+  ];
+  let current = noisy;
+  plan.forEach((p, k) => {
+    const sub = brokerSteps(T, spokeOuter(ag), agA, findApp(p.label), AGENT, `The agent calls ${p.label} through the server.`, p.run, p.produces, current);
+    for (const s of sub) steps.push({ ...s, bubbles: [...(s.bubbles ?? []), { label: 'AI Agent', text: `Calling ${p.label}… (${k + 1}/3)`, progress: (k + 0.5) / 3 }] });
     steps.push({
       title: T,
-      desc: `${label} finished — the result is reported back to the agent.`,
-      hot: ['AI Agent', 'server'],
+      desc: `${p.label} finished — reported back to the agent.`,
+      hot: ['AI Agent', 'Mikro', 'server'],
       edge: { from: serverEdge(agA), to: spokeOuter(ag), color: AGENT },
-      bubbles: [{ label: 'AI Agent', text: `${label} done ✓ (${k + 1}/${targets.length})`, progress: (k + 1) / targets.length }],
+      bubbles: [{ label: 'AI Agent', text: `${p.label} done ✓ (${k + 1}/3)`, progress: (k + 1) / 3 }],
+      datum: p.produces,
+      datumAt: 'Mikro',
       dur: 480,
       hold: 350,
     });
+    current = p.produces;
   });
-  steps.push({ title: T, desc: 'All steps reported back — workflow complete.', hot: ['AI Agent'], bubbles: [{ label: 'AI Agent', text: 'Workflow complete ✓', progress: 1 }], hold: 1000 });
-  steps.push(deliverStep(T));
+  steps.push({ title: T, desc: 'The agent hands you a much clearer image.', hot: ['AI Agent', 'Mikro'], bubbles: [{ label: 'AI Agent', text: 'All done ✓', progress: 1 }], datum: current, datumAt: 'Mikro', hold: 1000 });
+  steps.push(deliverStep(T, current));
   return steps;
 }
 
-function reactiveSteps(): Step[] {
-  const T = 'Run · reactive instrument';
-  const rx = findApp('React');
+// ── Story 5: smart microscopy — the custom Protocol app drives a loop ──────
+function smartSteps(): Step[] {
+  const T = 'Smart microscopy';
+  const pr = findApp('Protocol');
+  const prA = appAngle(pr);
+  const steps: Step[] = [
+    { title: T, desc: 'You launch an adaptive imaging protocol.', hot: [], user: 'run my smart-microscopy protocol', hold: 1000 },
+    { title: T, desc: 'The request is brokered to the custom Protocol app.', hot: ['server'], edge: { from: ENTRY, to: serverEdge(270), color: CTRL }, dur: 540, hold: 220 },
+    { title: T, desc: 'The server starts the Protocol app.', hot: ['Protocol'], edge: { from: serverEdge(prA), to: spokeOuter(pr), color: appColor(pr) }, bubbles: [{ label: 'Protocol', text: 'Protocol started', progress: 0 }], dur: 540, hold: 450 },
+  ];
+  const cycles = 2;
   const acq = findApp('Acquire');
-  return [
-    { title: T, desc: 'A reactive device (Raspberry Pi) is streaming data.', hot: ['React'], bubbles: [{ label: 'React', text: 'Streaming data…', progress: 1 }], fill: 'React', dur: 1000, hold: 250 },
-    { title: T, desc: 'The device uploads its data to the server.', hot: ['React', 'Mikro', 'server'], edge: { from: spokeOuter(rx), to: serverEdge(appAngle(rx)), color: DATA }, bubbles: [{ label: 'React', text: 'Uploading data…', progress: 1 }], dur: 600, hold: 250 },
-    { title: T, desc: 'Data stored ✓ — the server reacts.', hot: ['Mikro', 'server'], bubbles: [{ label: 'React', text: 'Sent ✓', progress: 1 }], hold: 600 },
-    { title: T, desc: 'The server triggers the next acquisition.', hot: ['Acquire'], edge: { from: serverEdge(appAngle(acq)), to: spokeOuter(acq), color: appColor(acq) }, bubbles: [{ label: 'Acquire', text: 'Action received — acquiring…', progress: 0 }], dur: 560, hold: 400 },
-    { title: T, desc: 'The microscope acquires the next image…', hot: ['Acquire'], bubbles: [{ label: 'Acquire', text: 'Acquiring…', progress: 1 }], fill: 'Acquire', dur: 1100, hold: 300 },
-    { title: T, desc: 'Captured ✓ — a closed loop steers the next experiment.', hot: ['Acquire'], bubbles: [{ label: 'Acquire', text: 'Captured ✓', progress: 1 }], hold: 1200 },
-  ];
-}
-
-function parallelSteps(): Step[] {
-  const T = 'Run · parallel';
-  const a = findApp('Process');
-  const b = findApp('Segment');
-  const aA = appAngle(a);
-  const bA = appAngle(b);
-  const la = apps[a].label;
-  const lb = apps[b].label;
-  return [
-    { title: T, desc: 'The user kicks off two tasks at once.', hot: [], user: 'do both, in parallel', hold: 1000 },
-    { title: T, desc: 'Both actions travel to the server.', hot: ['server'], edge: { from: ENTRY, to: serverEdge(270), color: CTRL }, dur: 560, hold: 250 },
-    {
-      title: T,
-      desc: 'The server dispatches both apps in parallel.',
-      hot: [la, lb],
-      edges: [
-        { from: serverEdge(aA), to: spokeOuter(a), color: appColor(a) },
-        { from: serverEdge(bA), to: spokeOuter(b), color: appColor(b) },
-      ],
-      bubbles: [
-        { label: la, text: 'Action received…', progress: 0 },
-        { label: lb, text: 'Action received…', progress: 0 },
-      ],
-      dur: 560,
-      hold: 450,
-    },
-    {
-      title: T,
-      desc: 'Both apps run concurrently…',
-      hot: [la, lb],
-      bubbles: [
-        { label: la, text: 'Running…', progress: 1 },
-        { label: lb, text: 'Running…', progress: 1 },
-      ],
-      fills: [la, lb],
-      dur: 1300,
-      hold: 300,
-    },
-    {
-      title: T,
-      desc: 'Both upload their results to the server…',
-      hot: [la, lb, 'server'],
-      edges: [
-        { from: spokeOuter(a), to: serverEdge(aA), color: DATA },
-        { from: spokeOuter(b), to: serverEdge(bA), color: DATA },
-      ],
-      bubbles: [
-        { label: la, text: 'Uploading data…', progress: 1 },
-        { label: lb, text: 'Uploading data…', progress: 1 },
-      ],
-      dur: 620,
-      hold: 300,
-    },
-    {
-      title: T,
-      desc: 'Mikro saves both results to the database.',
-      hot: ['Mikro', 'server'],
-      bubbles: [
-        { label: la, text: 'Saving…', progress: 1 },
-        { label: lb, text: 'Saving…', progress: 1 },
-      ],
-      hold: 650,
-    },
-    {
-      title: T,
-      desc: 'Both finished — data stored ✓',
-      hot: [la, lb, 'Mikro', 'server'],
-      bubbles: [
-        { label: la, text: 'Finished ✓ · stored', progress: 1 },
-        { label: lb, text: 'Finished ✓ · stored', progress: 1 },
-      ],
-      hold: 1000,
-    },
-    deliverStep(T),
-  ];
+  const acqA = appAngle(acq);
+  const ana = findApp('Analyze');
+  const anaA = appAngle(ana);
+  let lastImage: Datum = { kind: 'image', label: 'image' };
+  for (let c = 1; c <= cycles; c++) {
+    const p = c / cycles;
+    const proto = (text: string) => ({ label: 'Protocol', text, progress: p });
+    const img: Datum = { kind: 'image', label: `cycle ${c} image` };
+    const plot: Datum = { kind: 'plot', label: `cycle ${c} measurement` };
+    lastImage = img;
+    // Protocol → server → Acquire
+    steps.push({ title: T, desc: `Cycle ${c}: the protocol asks for a new frame.`, hot: ['Protocol', 'Acquire'], edge: { from: serverEdge(acqA), to: spokeOuter(acq), color: appColor(acq) }, bubbles: [{ label: 'Acquire', text: 'Acquiring…', progress: 0 }, proto(`Cycle ${c} · acquire`)], dur: 540, hold: 350 });
+    steps.push({ title: T, desc: `Cycle ${c}: the microscope captures an image.`, hot: ['Acquire'], bubbles: [{ label: 'Acquire', text: 'Captured ✓', progress: 1 }, proto(`Cycle ${c} · acquire`)], fill: 'Acquire', datum: img, datumAt: 'Acquire', dur: 1000, hold: 250 });
+    // Protocol → server → Analyze (measure & decide) — image now resides in Mikro
+    steps.push({ title: T, desc: `Cycle ${c}: the protocol measures the stored frame.`, hot: ['Protocol', 'Analyze', 'Mikro'], edge: { from: serverEdge(anaA), to: spokeOuter(ana), color: appColor(ana) }, bubbles: [{ label: 'Analyze', text: 'Measuring…', progress: 0 }, proto(`Cycle ${c} · measure`)], datum: img, datumAt: 'Mikro', dur: 540, hold: 350 });
+    steps.push({ title: T, desc: `Cycle ${c}: it quantifies and decides what to do next.`, hot: ['Analyze'], bubbles: [{ label: 'Analyze', text: 'Measured ✓', progress: 1 }, proto(`Cycle ${c} · decide`)], fill: 'Analyze', datum: plot, datumAt: 'Analyze', dur: 1000, hold: 250 });
+    if (c < cycles) {
+      steps.push({ title: T, desc: 'The protocol decides to image again — closing the loop.', hot: ['Protocol', 'Mikro', 'server'], bubbles: [proto('Next cycle…')], datum: plot, datumAt: 'Mikro', hold: 750 });
+    }
+  }
+  steps.push({ title: T, desc: 'The protocol converges and stores the best result.', hot: ['Protocol', 'Mikro', 'server'], bubbles: [{ label: 'Protocol', text: 'Protocol complete ✓', progress: 1 }], datum: lastImage, datumAt: 'Mikro', hold: 1000 });
+  steps.push(deliverStep(T, lastImage));
+  return steps;
 }
 
 function buildSteps(story: StoryId): Step[] {
-  if (story === 'agent') return agentSteps();
-  if (story === 'parallel') return parallelSteps();
-  if (story === 'reactive') return reactiveSteps();
-  return manualSteps();
+  if (story === 'segment') return segmentSteps();
+  if (story === 'classify') return classifySteps();
+  if (story === 'enhance') return enhanceSteps();
+  if (story === 'smart') return smartSteps();
+  return acquireSteps();
 }
 
 export function EcosystemOrbit() {
@@ -331,10 +330,12 @@ export function EcosystemOrbit() {
   const [desc, setDesc] = useState('Watch how a request flows through the platform.');
   const [runTitle, setRunTitle] = useState('');
   const [status, setStatus] = useState<Record<string, { text: string; progress: number }>>({});
-  const [story, setStory] = useState<StoryId>('manual');
+  const [story, setStory] = useState<StoryId>('acquire');
   const [cur, setCur] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [userMsg, setUserMsg] = useState<string | null>(null);
+  const [datum, setDatum] = useState<Datum | null>(null);
+  const [datumAt, setDatumAt] = useState<string | null>(null);
 
   const steps = useMemo(() => buildSteps(story), [story]);
   const log = Object.entries(status);
@@ -351,6 +352,8 @@ export function EcosystemOrbit() {
   // play/pause choice (once paused into manual mode, stay there).
   useEffect(() => {
     setCur(0);
+    setDatum(null);
+    setDatumAt(null);
   }, [story]);
 
   // play the current step: run its enter animation, settle, then (if playing) advance
@@ -379,6 +382,10 @@ export function EcosystemOrbit() {
     setUserMsg(step.user ?? null);
     setStatus(snapshot(fills.size ? 0 : 1));
     setFlows([]);
+    // datum is fully derived from the step (no persistence) so back/forward and
+    // story switches never leave a stale symbol behind.
+    setDatum(step.datum ?? null);
+    setDatumAt(step.datumAt ?? null);
 
     const dur = step.dur ?? 480;
     const enter = () =>
@@ -474,7 +481,7 @@ export function EcosystemOrbit() {
           <div className="order-1 w-full lg:order-2 lg:flex-1">
             <div ref={wrapRef} className="relative w-full" style={{ height: BASE_H * scale }}>
               <div className="absolute left-0 top-0 origin-top-left" style={{ width: BASE_W, height: BASE_H, transform: `scale(${scale})` }}>
-                <Diagram inView={inView} flows={flows} hot={hot} status={status} userMsg={userMsg} desc={desc} compact={scale < 0.5} />
+                <Diagram inView={inView} flows={flows} hot={hot} status={status} userMsg={userMsg} desc={desc} datum={datum} datumAt={datumAt} compact={scale < 0.5} />
               </div>
             </div>
 
@@ -591,7 +598,7 @@ function ControlPanel({
   );
 }
 
-function Diagram({ inView, flows, hot, status, userMsg, desc, compact }: { inView: boolean; flows: Flow[]; hot: Set<string>; status: Record<string, { text: string; progress: number }>; userMsg: string | null; desc: string; compact: boolean }) {
+function Diagram({ inView, flows, hot, status, userMsg, desc, datum, datumAt, compact }: { inView: boolean; flows: Flow[]; hot: Set<string>; status: Record<string, { text: string; progress: number }>; userMsg: string | null; desc: string; datum: Datum | null; datumAt: string | null; compact: boolean }) {
   const bloom = (delay: number): CSSProperties => ({
     opacity: inView ? 1 : 0,
     transform: inView ? 'scale(1)' : 'scale(0.84)',
@@ -691,6 +698,8 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, compact }: { inVie
             <User className="size-6" style={{ color: iconColor('var(--brand-hue)') }} />
           </span>
           {!compact && <div className="mt-1.5 font-mono text-[11px] text-fd-muted-foreground">You</div>}
+          {/* the result handed back to the user */}
+          {datum && datumAt === 'user' && <DatumSymbol datum={datum} className="absolute left-full top-1/2 ml-2 -translate-y-1/2" />}
         </div>
       </Centered>
 
@@ -711,6 +720,18 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, compact }: { inVie
           )}
         </div>
       </Centered>
+
+      {/* datum resident in a core service (e.g. stored in Mikro) */}
+      {datum && datumAt && services.some((s) => s.label === datumAt) && (
+        (() => {
+          const ang = services.findIndex((s) => s.label === datumAt) * 72;
+          return (
+            <Centered x={px(RO + 34, ang)} y={py(RO + 34, ang)}>
+              <DatumSymbol datum={datum} />
+            </Centered>
+          );
+        })()
+      )}
 
       {/* core-service labels — neutral; hidden when the diagram is small */}
       {!compact &&
@@ -800,6 +821,8 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, compact }: { inVie
                       </div>
                     </>
                   )}
+                  {/* the datum this device just produced, shown as a little symbol */}
+                  {datum && datumAt === app.label && <DatumSymbol datum={datum} className="absolute -right-2.5 -top-2.5" />}
                 </div>
               )}
               </Link>
@@ -850,5 +873,70 @@ function Centered({ x, y, children }: { x: number; y: number; children: ReactNod
     <div className="absolute" style={{ left: x, top: y, transform: 'translate(-50%, -50%)' }}>
       {children}
     </div>
+  );
+}
+
+/** A small primitive render of a datum — a symbol that rides along with the data
+    (shown on the device that produced it, and on the user when delivered). */
+function DatumSymbol({ datum, className }: { datum: Datum; className?: string }) {
+  return (
+    <span
+      key={datum.kind + datum.label}
+      title={datum.label}
+      className={`animate-pop-in pointer-events-none block h-[34px] w-[44px] overflow-hidden rounded-md shadow-md ring-1 ring-fd-border ${className ?? ''}`}
+    >
+      <DatumGlyph datum={datum} />
+    </span>
+  );
+}
+
+const PUNCTA = [
+  [16, 16], [34, 12], [52, 22], [70, 16], [24, 34],
+  [46, 40], [64, 34], [80, 44], [30, 54], [58, 56],
+];
+const BLOBS: [number, number, number, number][] = [
+  [28, 26, 9, 160], [62, 30, 8, 150], [44, 50, 7, 185],
+];
+
+function DatumGlyph({ datum }: { datum: Datum }) {
+  if (datum.kind === 'graph') {
+    return (
+      <svg viewBox="0 0 96 72" className="size-full" style={{ background: 'var(--orbit-seg)' }}>
+        <line x1="30" y1="24" x2="58" y2="20" stroke="var(--orbit-seg-stroke-hot)" strokeWidth="1.5" />
+        <line x1="30" y1="24" x2="42" y2="48" stroke="var(--orbit-seg-stroke-hot)" strokeWidth="1.5" />
+        <circle cx="30" cy="24" r="7" fill="oklch(0.7 0.16 195)" />
+        <circle cx="58" cy="20" r="6" fill="oklch(0.72 0.16 90)" />
+        <circle cx="42" cy="48" r="6" fill="oklch(0.7 0.16 320)" />
+        <rect x="48" y="40" width="42" height="16" rx="8" fill="oklch(0.6 0.18 var(--brand-hue))" />
+        <text x="69" y="51" textAnchor="middle" fontSize="9" fontWeight="600" fontFamily="var(--font-mono, monospace)" fill="#fff">Chicken</text>
+      </svg>
+    );
+  }
+  if (datum.kind === 'plot') {
+    const bars = [40, 64, 28, 52, 36];
+    return (
+      <svg viewBox="0 0 96 72" className="size-full" style={{ background: 'var(--orbit-seg)' }}>
+        {bars.map((h, i) => (
+          <rect key={i} x={9 + i * 17} y={68 - h} width="11" height={h} rx="2" fill="oklch(0.7 0.16 calc(var(--brand-hue) + 150))" />
+        ))}
+      </svg>
+    );
+  }
+  // image / mask — a little microscopy plane (dark, with fluorescent blobs)
+  return (
+    <svg viewBox="0 0 96 72" className="size-full">
+      <rect width="96" height="72" fill="#0b0b14" />
+      {!datum.clean &&
+        PUNCTA.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r="1.6" fill="oklch(0.82 0.12 165)" opacity="0.5" />
+        ))}
+      {BLOBS.map(([x, y, r, h], i) => (
+        <circle key={`b${i}`} cx={x} cy={y} r={r} fill={`oklch(0.78 0.16 ${h})`} opacity={datum.clean ? 0.95 : 0.78} />
+      ))}
+      {datum.kind === 'mask' &&
+        BLOBS.map(([x, y, r, h], i) => (
+          <circle key={`m${i}`} cx={x} cy={y} r={r + 2.5} fill="none" stroke={`oklch(0.85 0.18 ${h})`} strokeWidth="1.4" strokeDasharray="3 2" />
+        ))}
+    </svg>
   );
 }
