@@ -30,9 +30,9 @@ import { Logo } from '@/components/site/logo';
    external Control panel lives. Two looping "runs" light up the edges with a
    glowing flow to show how every task is brokered by the server. */
 const BASE_W = 1120;
-const BASE_H = 770;
+const BASE_H = 820;
 const CX = 560;
-const CY = 380;
+const CY = 405;
 const RI = 100;
 const RO = 172;
 const R_APP = 345;
@@ -50,6 +50,7 @@ type Node = {
   sub: string;
   icon: typeof Network;
   href: string; // docs page this node links to
+  tech?: string; // tool/runtime shown as a small badge (e.g. Docker, Jupyter)
   hue?: number;
   bidi?: boolean;
   placeholder?: boolean;
@@ -65,14 +66,14 @@ const services: Node[] = [
 
 // The AI Agent is one of the apps (just another caller of actions).
 const apps: Node[] = [
-  { label: 'Acquire', sub: 'µManager', icon: Aperture, hue: 195, href: '/docs/apps/standalones/mikro-manager' },
-  { label: 'Process', sub: 'Python', icon: Workflow, hue: 92, href: '/docs/developers/python' },
-  { label: 'Segment', sub: 'Docker', icon: Box, hue: 250, href: '/docs/apps/plugins/segmentor' },
-  { label: 'Analyze', sub: 'Jupyter', icon: LineChart, hue: 40, href: '/docs/developers/python/classical' },
-  { label: 'Visualize', sub: 'napari · Vizarr', icon: Eye, hue: 320, href: '/docs/apps/standalones/mikro-napari' },
-  { label: 'React', sub: 'Raspberry Pi', icon: Zap, hue: 150, bidi: true, href: '/docs/apps' },
-  { label: 'AI Agent', sub: 'autonomous', icon: Bot, hue: 292, href: '/docs/apps' },
-  { label: 'Your app', sub: 'bring your own', icon: Plus, placeholder: true, href: '/docs/developers/python/plugin' },
+  { label: 'Acquire', sub: 'Capture from the scope', tech: 'µManager', icon: Aperture, hue: 195, href: '/docs/apps/standalones/mikro-manager' },
+  { label: 'Process', sub: 'Prepare & clean data', tech: 'Python', icon: Workflow, hue: 92, href: '/docs/developers/python' },
+  { label: 'Segment', sub: 'Find the objects', tech: 'Docker', icon: Box, hue: 250, href: '/docs/apps/plugins/segmentor' },
+  { label: 'Analyze', sub: 'Quantify results', tech: 'Jupyter', icon: LineChart, hue: 40, href: '/docs/developers/python/classical' },
+  { label: 'Visualize', sub: 'Inspect & validate', tech: 'napari', icon: Eye, hue: 320, href: '/docs/apps/standalones/mikro-napari' },
+  { label: 'React', sub: 'Edge automation', tech: 'Raspberry Pi', icon: Zap, hue: 150, bidi: true, href: '/docs/apps' },
+  { label: 'AI Agent', sub: 'Plans & runs workflows', tech: 'LLM', icon: Bot, hue: 292, href: '/docs/apps' },
+  { label: 'Your app', sub: 'Bring your own', icon: Plus, placeholder: true, href: '/docs/developers/python/plugin' },
 ];
 
 const N = apps.length;
@@ -84,12 +85,29 @@ const serverEdge = (deg: number) => ({ x: px(RO + 6, deg), y: py(RO + 6, deg) })
 const spokeOuter = (i: number) => ({ x: px(R_APP - 52, appAngle(i)), y: py(R_APP - 52, appAngle(i)) });
 const ENTRY = { x: 132, y: CY };
 
-// Action & data flows are keyed to the brand: action = primary hue, data = a
-// complementary brand-matched hue, so both rotate with `--brand-hue`.
-const CTRL = 'oklch(0.82 0.16 var(--brand-hue))';
-const AGENT = 'oklch(0.84 0.16 calc(var(--brand-hue) + 30))';
-const DATA = 'oklch(0.85 0.14 calc(var(--brand-hue) + 150))';
-const appColor = (i: number) => `oklch(0.84 0.15 ${apps[i].hue})`;
+// Action & data flows are keyed to the brand AND the theme: lightness/chroma
+// come from `--orbit-flow-*` (which flip between light/dark), the hue from the
+// brand — so flows rotate with `--brand-hue` and re-tune per theme.
+const CTRL = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) var(--brand-hue))';
+const AGENT = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) calc(var(--brand-hue) + 30))';
+const DATA = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) calc(var(--brand-hue) + 150))';
+const appColor = (i: number) => `oklch(var(--orbit-flow-l) 0.17 ${apps[i].hue})`;
+
+// App/node card styling, driven by theme tokens (`--orbit-card-*`).
+const cardStyle = (hue: number | string, isHot: boolean): CSSProperties => ({
+  borderColor: isHot ? `oklch(var(--orbit-card-border-hot-l) 0.15 ${hue})` : `oklch(var(--orbit-card-border-l) 0.1 ${hue} / 0.55)`,
+  backgroundImage: `linear-gradient(180deg, oklch(var(--orbit-card-l1) var(--orbit-card-c) ${hue}), oklch(var(--orbit-card-l2) var(--orbit-card-c) ${hue}))`,
+  boxShadow: isHot
+    ? `0 0 0 1.5px oklch(var(--orbit-card-border-hot-l) 0.15 ${hue}), 0 0 36px -8px oklch(0.6 0.2 ${hue} / 0.6)`
+    : `0 10px 30px -18px oklch(0.55 0.15 ${hue} / 0.55)`,
+  transform: isHot ? 'scale(1.06)' : 'scale(1)',
+  transition: 'transform .25s ease, box-shadow .25s ease, border-color .25s ease',
+});
+const iconBox = (hue: number | string): CSSProperties => ({
+  borderColor: `oklch(var(--orbit-card-border-l) 0.11 ${hue} / 0.5)`,
+  backgroundColor: `oklch(var(--orbit-card-iconbg-l) 0.08 ${hue} / 0.45)`,
+});
+const iconColor = (hue: number | string) => `oklch(var(--orbit-card-fg-l) 0.16 ${hue})`;
 
 function wedge(a0: number, a1: number, ri: number, ro: number) {
   const large = a1 - a0 > 180 ? 1 : 0;
@@ -291,6 +309,7 @@ export function EcosystemOrbit() {
   const [userMsg, setUserMsg] = useState<string | null>(null);
 
   const steps = useMemo(() => buildSteps(story), [story]);
+  const log = Object.entries(status);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -376,11 +395,11 @@ export function EcosystemOrbit() {
     <section className="w-full pb-16">
       <div
         ref={revealRef}
-        className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[#08080c] px-6 py-12 text-white sm:px-10 lg:px-14"
+        className="relative isolate overflow-hidden rounded-3xl border border-fd-border bg-[var(--orbit-surface)] px-6 py-12 text-fd-foreground sm:px-10 lg:px-14"
       >
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute left-1/2 top-[26%] h-[34rem] w-[40rem] -translate-x-1/2 rounded-full bg-primary/12 blur-[140px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.04)_1px,transparent_0)] [background-size:36px_36px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,var(--orbit-grid)_1px,transparent_0)] [background-size:36px_36px]" />
         </div>
 
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -408,9 +427,29 @@ export function EcosystemOrbit() {
             className="order-2 lg:order-1 lg:w-[320px] lg:shrink-0"
           />
 
-          <div ref={wrapRef} className="relative order-1 w-full lg:order-2 lg:flex-1" style={{ height: BASE_H * scale }}>
-            <div className="absolute left-0 top-0 origin-top-left" style={{ width: BASE_W, height: BASE_H, transform: `scale(${scale})` }}>
-              <Diagram inView={inView} flows={flows} hot={hot} status={status} userMsg={userMsg} compact={scale < 0.5} />
+          <div className="order-1 w-full lg:order-2 lg:flex-1">
+            <div ref={wrapRef} className="relative w-full" style={{ height: BASE_H * scale }}>
+              <div className="absolute left-0 top-0 origin-top-left" style={{ width: BASE_W, height: BASE_H, transform: `scale(${scale})` }}>
+                <Diagram inView={inView} flows={flows} hot={hot} status={status} userMsg={userMsg} compact={scale < 0.5} />
+              </div>
+            </div>
+
+            {/* live log — part of the diagram, borderless */}
+            <div className="mt-2 px-1 font-mono">
+              <div className="text-[10px] tracking-[0.16em] text-primary/70">LIVE LOG</div>
+              <div className="mt-1.5 flex min-h-[2.75rem] flex-col gap-1">
+                {log.length === 0 ? (
+                  <span className="text-[11px] text-fd-muted-foreground">Idle — waiting for the next step…</span>
+                ) : (
+                  log.map(([label, s]) => (
+                    <div key={label} className="flex items-center gap-2 text-[11px]">
+                      <span className="shrink-0 font-semibold text-fd-foreground">{label}</span>
+                      <span className="truncate text-fd-muted-foreground">{s.text}</span>
+                      <span className="ml-auto shrink-0 text-fd-muted-foreground">{Math.round(s.progress * 100)}%</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -446,11 +485,35 @@ function ControlPanel({
 }) {
   return (
     <div className={className}>
-      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6 sm:p-7">
-        <div className="font-mono text-[11px] tracking-[0.18em] text-primary/80">PICK A STORY</div>
+      <div className="rounded-2xl border border-fd-border bg-fd-muted/30 p-6 sm:p-7">
+        {/* TEMPORAL CONTROL — narration + stepper (above the story picker) */}
+        <div className="min-h-[5rem]">
+          <div className="font-mono text-[10px] tracking-[0.16em] text-primary/70">{runTitle || 'LIVE'}</div>
+          <p key={desc} className="animate-pop-in mt-2.5 text-[15px] leading-relaxed text-fd-foreground/90">{desc}</p>
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <button type="button" onClick={onPrev} aria-label="Previous step" className="grid size-9 place-items-center rounded-lg border border-fd-border bg-fd-muted/30 text-fd-muted-foreground transition-colors hover:bg-fd-muted/60 hover:text-fd-foreground">
+            <ChevronLeft className="size-4" />
+          </button>
+          <button type="button" onClick={onToggle} aria-label={playing ? 'Pause' : 'Play'} className="grid size-9 place-items-center rounded-lg border border-primary/40 bg-primary/15 text-primary transition-colors hover:bg-primary/25">
+            {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+          </button>
+          <button type="button" onClick={onNext} aria-label="Next step" className="grid size-9 place-items-center rounded-lg border border-fd-border bg-fd-muted/30 text-fd-muted-foreground transition-colors hover:bg-fd-muted/60 hover:text-fd-foreground">
+            <ChevronRight className="size-4" />
+          </button>
+          <span className="ml-auto font-mono text-[11px] text-fd-muted-foreground">
+            Step {step + 1} / {total}
+          </span>
+        </div>
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-fd-border">
+          <div className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${total ? ((step + 1) / total) * 100 : 0}%` }} />
+        </div>
 
-        {/* story selector */}
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="my-5 h-px bg-fd-border" />
+
+        {/* STORY SELECTOR — below the temporal control */}
+        <div className="font-mono text-[11px] tracking-[0.18em] text-primary/80">PICK A STORY</div>
+        <div className="mt-3 flex flex-col gap-2">
           {STORIES.map((s) => {
             const active = story === s.id;
             return (
@@ -462,47 +525,20 @@ function ControlPanel({
                 className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                   active
                     ? 'border-primary/50 bg-primary/10'
-                    : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]'
+                    : 'border-fd-border bg-fd-muted/30 hover:border-fd-border hover:bg-fd-muted/60'
                 }`}
               >
-                <s.icon className={`mt-0.5 size-4 shrink-0 ${active ? 'text-primary' : 'text-white/55'}`} />
+                <s.icon className={`mt-0.5 size-4 shrink-0 ${active ? 'text-primary' : 'text-fd-muted-foreground'}`} />
                 <span>
-                  <span className={`block text-[13px] font-semibold ${active ? 'text-white' : 'text-white/85'}`}>{s.title}</span>
-                  <span className="mt-0.5 block font-mono text-[10.5px] text-white/45">{s.blurb}</span>
+                  <span className={`block text-[13px] font-semibold ${active ? 'text-primary' : 'text-fd-foreground'}`}>{s.title}</span>
+                  <span className="mt-0.5 block font-mono text-[10.5px] text-fd-muted-foreground">{s.blurb}</span>
                 </span>
               </button>
             );
           })}
         </div>
 
-        <div className="my-5 h-px bg-white/10" />
-
-        {/* live narration */}
-        <div className="min-h-[5.5rem]">
-          <div className="font-mono text-[10px] tracking-[0.16em] text-primary/70">{runTitle || 'LIVE'}</div>
-          <p key={desc} className="animate-pop-in mt-2.5 text-[15px] leading-relaxed text-white/80">{desc}</p>
-        </div>
-
-        {/* stepper controls */}
-        <div className="mt-4 flex items-center gap-2">
-          <button type="button" onClick={onPrev} aria-label="Previous step" className="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.08] hover:text-white">
-            <ChevronLeft className="size-4" />
-          </button>
-          <button type="button" onClick={onToggle} aria-label={playing ? 'Pause' : 'Play'} className="grid size-9 place-items-center rounded-lg border border-primary/40 bg-primary/15 text-primary transition-colors hover:bg-primary/25">
-            {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-          </button>
-          <button type="button" onClick={onNext} aria-label="Next step" className="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.08] hover:text-white">
-            <ChevronRight className="size-4" />
-          </button>
-          <span className="ml-auto font-mono text-[11px] text-white/45">
-            Step {step + 1} / {total}
-          </span>
-        </div>
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${total ? ((step + 1) / total) * 100 : 0}%` }} />
-        </div>
-
-        <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4 font-mono text-[11px] text-white/55">
+        <div className="mt-5 flex flex-col gap-2 border-t border-fd-border pt-4 font-mono text-[11px] text-fd-muted-foreground">
           <span className="flex items-center gap-2.5"><span className="h-1.5 w-5 rounded-full" style={{ background: CTRL }} /> Action · issued to the server</span>
           <span className="flex items-center gap-2.5"><span className="h-1.5 w-5 rounded-full" style={{ background: DATA }} /> Data · stored back on the server</span>
         </div>
@@ -535,7 +571,7 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
           const x2 = CX + dx * (R_APP - 60);
           const y2 = CY + dy * (R_APP - 60);
           if (app.bidi) {
-            return <line key={app.label} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="2" style={{ stroke: 'oklch(0.84 0.16 150)', opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: '500ms' }} />;
+            return <line key={app.label} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="2" style={{ stroke: `oklch(var(--orbit-flow-l) 0.16 150)`, opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: '500ms' }} />;
           }
           return (
             <line
@@ -543,7 +579,7 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
               x1={x1} y1={y1} x2={x2} y2={y2}
               strokeWidth="1.4"
               strokeDasharray={app.placeholder ? '4 5' : undefined}
-              style={{ stroke: app.placeholder ? 'rgba(255,255,255,.16)' : `oklch(0.55 0.12 ${app.hue} / 0.7)`, opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: `${300 + i * 70}ms` }}
+              style={{ stroke: app.placeholder ? 'var(--orbit-spoke)' : `oklch(var(--orbit-card-border-l) 0.12 ${app.hue} / 0.7)`, opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: `${300 + i * 70}ms` }}
             />
           );
         })}
@@ -553,7 +589,7 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
           const a0 = -36 + i * 72;
           const d = wedge(a0, a0 + 72, RI, RO);
           if (s.placeholder) {
-            return <path key={s.label} d={d} className="orbit-pulse" style={{ fill: 'rgba(255,255,255,0.035)', stroke: 'rgba(255,255,255,0.4)', strokeWidth: 1.2, strokeDasharray: '5 5' }} />;
+            return <path key={s.label} d={d} className="orbit-pulse" style={{ fill: 'var(--orbit-seg)', stroke: 'var(--orbit-seg-stroke-hot)', strokeWidth: 1.2, strokeDasharray: '5 5' }} />;
           }
           const isHot = hot.has(s.label);
           return (
@@ -561,8 +597,8 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
               key={s.label}
               d={d}
               style={{
-                fill: isHot ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                stroke: isHot ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.16)',
+                fill: isHot ? 'var(--orbit-seg-hot)' : 'var(--orbit-seg)',
+                stroke: isHot ? 'var(--orbit-seg-stroke-hot)' : 'var(--orbit-seg-stroke)',
                 strokeWidth: isHot ? 1.6 : 1,
                 opacity: inView ? 1 : 0,
                 transition: 'opacity .5s ease, fill .25s ease, stroke .25s ease',
@@ -571,13 +607,13 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
             />
           );
         })}
-        <circle cx={CX} cy={CY} r={RI} fill="#0b0b14" />
-        <circle cx={CX} cy={CY} r={RO + 2} fill="none" style={{ stroke: 'oklch(0.6 0.1 var(--brand-hue) / .35)', strokeWidth: 1.2 }} />
-        <circle cx={CX} cy={CY} r={RO + 8} fill="none" style={{ stroke: 'oklch(0.85 0.16 var(--brand-hue))', strokeWidth: 2, opacity: hot.has('server') ? 0.85 : 0, transition: 'opacity .25s ease' }} />
+        <circle cx={CX} cy={CY} r={RI} style={{ fill: 'var(--orbit-hole)' }} />
+        <circle cx={CX} cy={CY} r={RO + 2} fill="none" style={{ stroke: 'oklch(0.6 0.12 var(--brand-hue) / .4)', strokeWidth: 1.2 }} />
+        <circle cx={CX} cy={CY} r={RO + 8} fill="none" style={{ stroke: 'oklch(var(--orbit-flow-l) 0.16 var(--brand-hue))', strokeWidth: 2, opacity: hot.has('server') ? 0.85 : 0, transition: 'opacity .25s ease' }} />
 
         {/* actions-in arrow (from the User node toward the server) */}
-        <line x1={ENTRY.x + 34} y1={ENTRY.y} x2={px(RO + 4, 270)} y2={py(RO + 4, 270)} strokeWidth="2.6" style={{ stroke: 'oklch(0.72 0.15 var(--brand-hue))', opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: '650ms' }} />
-        <text x={(ENTRY.x + 34 + CX - RO) / 2} y={ENTRY.y - 14} fontFamily="var(--font-mono, monospace)" fontSize="11" fontWeight="500" letterSpacing="1.6" textAnchor="middle" style={{ fill: 'oklch(0.78 0.13 var(--brand-hue))' }}>
+        <line x1={ENTRY.x + 34} y1={ENTRY.y} x2={px(RO + 4, 270)} y2={py(RO + 4, 270)} strokeWidth="2.6" style={{ stroke: 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) var(--brand-hue))', opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: '650ms' }} />
+        <text x={(ENTRY.x + 34 + CX - RO) / 2} y={ENTRY.y - 14} fontFamily="var(--font-mono, monospace)" fontSize="11" fontWeight="500" letterSpacing="1.6" textAnchor="middle" style={{ fill: 'oklch(var(--orbit-flow-l) 0.13 var(--brand-hue))' }}>
           ISSUE ACTIONS
         </text>
 
@@ -607,10 +643,10 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
               <span className="absolute -bottom-1 left-1/2 size-2 -translate-x-1/2 rotate-45 border-b border-r border-primary/40 bg-primary/15" />
             </div>
           )}
-          <span className="grid size-11 place-items-center rounded-2xl border " style={{ borderColor: 'oklch(0.62 0.11 var(--brand-hue) / 0.5)', backgroundColor: 'oklch(0.42 0.1 var(--brand-hue) / 0.4)' }}>
-            <User className="size-6" style={{ color: 'oklch(0.86 0.14 var(--brand-hue))' }} />
+          <span className="grid size-11 place-items-center rounded-2xl border" style={iconBox('var(--brand-hue)')}>
+            <User className="size-6" style={{ color: iconColor('var(--brand-hue)') }} />
           </span>
-          {!compact && <div className="mt-1.5 font-mono text-[11px] text-white/55">You</div>}
+          {!compact && <div className="mt-1.5 font-mono text-[11px] text-fd-muted-foreground">You</div>}
         </div>
       </Centered>
 
@@ -638,8 +674,8 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
                 className={`flex w-[92px] cursor-pointer flex-col items-center text-center transition-colors hover:text-primary ${s.placeholder ? 'orbit-pulse' : ''}`}
                 style={s.placeholder ? undefined : bloom(i * 70)}
               >
-                <s.icon className="mb-1 size-[16px]" style={{ color: s.placeholder ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.85)' }} />
-                <div className={`text-[12.5px] font-bold tracking-tight ${s.placeholder ? 'text-white/75' : ''}`}>{s.label}</div>
+                <s.icon className="mb-1 size-[16px]" style={{ color: 'var(--orbit-icon)' }} />
+                <div className={`text-[12.5px] font-bold tracking-tight ${s.placeholder ? 'text-fd-muted-foreground' : ''}`}>{s.label}</div>
               </Link>
             </Centered>
           );
@@ -649,6 +685,7 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
       {apps.map((app, i) => {
         const { x, y } = appPt(i);
         const isHot = hot.has(app.label);
+        const st = status[app.label];
         return (
           <Centered key={app.label} x={x} y={y}>
             <div style={bloom(300 + i * 70)}>
@@ -658,36 +695,58 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
                 className="block cursor-pointer transition-transform duration-200 hover:scale-[1.04]"
               >
               {app.placeholder ? (
-                <div className={`orbit-pulse flex items-center rounded-2xl border border-dashed border-white/35 bg-white/[0.03] ${compact ? 'h-9 w-16' : 'h-[66px] w-[182px] gap-3 px-4'}`}>
-                  {!compact && (
+                <div
+                  className={`orbit-pulse flex items-center justify-center rounded-2xl border border-dashed ${compact ? 'size-[104px]' : 'h-[68px] w-[208px] justify-start gap-3 px-4'}`}
+                  style={{ borderColor: 'var(--orbit-seg-stroke-hot)', backgroundColor: 'var(--orbit-seg)' }}
+                >
+                  {compact ? (
+                    <app.icon className="size-10" style={{ color: 'var(--orbit-icon)' }} />
+                  ) : (
                     <>
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-dashed border-white/35 text-white/75"><app.icon className="size-[20px]" /></span>
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-dashed" style={{ borderColor: 'var(--orbit-seg-stroke-hot)', color: 'var(--orbit-icon)' }}><app.icon className="size-[20px]" /></span>
                       <div className="leading-tight">
-                        <div className="text-[14px] font-bold tracking-tight text-white/85">{app.label}</div>
-                        <div className="mt-1 font-mono text-[10px] text-white/55">{app.sub}</div>
+                        <div className="text-[14px] font-bold tracking-tight text-fd-foreground">{app.label}</div>
+                        <div className="mt-1 font-mono text-[10px] text-fd-muted-foreground">{app.sub}</div>
                       </div>
                     </>
                   )}
                 </div>
               ) : (
                 <div
-                  className={`flex items-center rounded-2xl border ${compact ? 'h-9 w-16' : 'h-[66px] w-[182px] gap-3 px-4'}`}
-                  style={{
-                    borderColor: isHot ? `oklch(0.72 0.15 ${app.hue})` : `oklch(0.52 0.1 ${app.hue} / 0.5)`,
-                    backgroundImage: `linear-gradient(180deg, oklch(0.3 0.06 ${app.hue}), oklch(0.24 0.045 ${app.hue}))`,
-                    boxShadow: isHot ? `0 0 0 1.5px oklch(0.72 0.15 ${app.hue}), 0 0 36px -6px oklch(0.6 0.2 ${app.hue} / 0.85)` : `0 10px 34px -18px oklch(0.5 0.18 ${app.hue} / 0.7)`,
-                    transform: isHot ? 'scale(1.06)' : 'scale(1)',
-                    transition: 'transform .25s ease, box-shadow .25s ease, border-color .25s ease',
-                  }}
+                  className={`relative flex items-center rounded-2xl border ${compact ? 'size-[104px] justify-center' : 'h-[68px] w-[208px] justify-start gap-3 px-4'}`}
+                  style={cardStyle(app.hue!, isHot)}
                 >
-                  {!compact && (
+                  {compact ? (
                     <>
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl border" style={{ borderColor: `oklch(0.62 0.11 ${app.hue} / 0.45)`, backgroundColor: `oklch(0.42 0.09 ${app.hue} / 0.35)` }}>
-                        <app.icon className="size-[20px]" style={{ color: `oklch(0.86 0.14 ${app.hue})` }} />
+                      <app.icon className="size-10" style={{ color: iconColor(app.hue!) }} />
+                      {st && (
+                        <div className="absolute inset-x-3 bottom-3 h-2 overflow-hidden rounded-full" style={{ background: 'var(--orbit-seg-hot)' }}>
+                          <div className="h-full rounded-full" style={{ width: `${st.progress * 100}%`, background: iconColor(app.hue!), transition: 'width .12s linear' }} />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl border" style={iconBox(app.hue!)}>
+                        <app.icon className="size-[20px]" style={{ color: iconColor(app.hue!) }} />
                       </span>
-                      <div className="leading-tight">
-                        <div className="text-[14px] font-bold tracking-tight">{app.label}</div>
-                        <div className="mt-1 font-mono text-[10px]" style={{ color: `oklch(0.84 0.12 ${app.hue})` }}>{app.sub}</div>
+                      <div className="min-w-0 leading-tight">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate text-[14px] font-bold tracking-tight text-fd-foreground">{app.label}</span>
+                          {app.tech && (
+                            <span
+                              className="shrink-0 rounded border px-1 py-px font-mono text-[9px] leading-none"
+                              style={{
+                                borderColor: `oklch(var(--orbit-card-border-l) 0.1 ${app.hue} / 0.5)`,
+                                backgroundColor: `oklch(var(--orbit-card-iconbg-l) 0.07 ${app.hue} / 0.55)`,
+                                color: iconColor(app.hue!),
+                              }}
+                            >
+                              {app.tech}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 truncate font-mono text-[10px] text-fd-muted-foreground">{app.sub}</div>
                       </div>
                     </>
                   )}
@@ -710,16 +769,16 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
           return (
             <Centered key={`st-${app.label}`} x={x} y={by}>
               <div
-                className="animate-pop-in w-[164px] rounded-xl border bg-[#0b0b14]/95 px-3 py-2 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.8)] backdrop-blur"
-                style={{ borderColor: `oklch(0.6 0.12 ${hue} / 0.6)` }}
+                className="animate-pop-in w-[164px] rounded-xl border px-3 py-2 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.35)] backdrop-blur"
+                style={{ borderColor: `oklch(0.6 0.13 ${hue} / 0.6)`, background: 'var(--orbit-bubble-bg)' }}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-bold tracking-tight text-white/90">{app.label}</span>
-                  <span className="font-mono text-[10px] text-white/45">{Math.round(st.progress * 100)}%</span>
+                  <span className="text-[12px] font-bold tracking-tight text-fd-foreground">{app.label}</span>
+                  <span className="font-mono text-[10px] text-fd-muted-foreground">{Math.round(st.progress * 100)}%</span>
                 </div>
-                <div className="mt-1 font-mono text-[10px] leading-snug text-white/65">{st.text}</div>
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full" style={{ width: `${st.progress * 100}%`, background: `oklch(0.84 0.15 ${hue})`, transition: 'width .12s linear' }} />
+                <div className="mt-1 font-mono text-[10px] leading-snug text-fd-muted-foreground">{st.text}</div>
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-fd-border">
+                  <div className="h-full rounded-full" style={{ width: `${st.progress * 100}%`, background: `oklch(var(--orbit-flow-l) 0.16 ${hue})`, transition: 'width .12s linear' }} />
                 </div>
               </div>
             </Centered>
@@ -727,9 +786,9 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
         })}
 
       {/* legend */}
-      <div className="absolute right-2 top-1 flex flex-col gap-2.5 font-mono text-[11px] text-white/60" style={bloom(150)}>
-        <div className="flex items-center gap-2.5"><span className="size-[15px] rounded-full border-[2.5px] border-primary bg-primary/15" /> Server <span className="text-white/35">· services combined</span></div>
-        <div className="flex items-center gap-2.5"><span className="h-[10px] w-[15px] rounded border-[1.6px] border-white/45" /> Apps <span className="text-white/35">· outer layer</span></div>
+      <div className="absolute right-2 top-1 flex flex-col gap-2.5 font-mono text-[11px] text-fd-muted-foreground" style={bloom(150)}>
+        <div className="flex items-center gap-2.5"><span className="size-[15px] rounded-full border-[2.5px] border-primary bg-primary/15" /> Server <span className="text-fd-muted-foreground/60">· services combined</span></div>
+        <div className="flex items-center gap-2.5"><span className="h-[10px] w-[15px] rounded border-[1.6px] border-fd-muted-foreground/50" /> Apps <span className="text-fd-muted-foreground/60">· outer layer</span></div>
       </div>
     </div>
   );

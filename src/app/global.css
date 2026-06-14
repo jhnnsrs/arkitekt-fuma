@@ -37,6 +37,28 @@
   --brand-logo-light: oklch(0.6 calc(var(--brand-chroma) * 0.9) var(--brand-hue));
   --brand-logo-mid: oklch(0.52 var(--brand-chroma) var(--brand-hue));
   --brand-logo-dark: oklch(0.46 var(--brand-chroma) var(--brand-hue));
+
+  /* Ecosystem-orbit figure tokens — light theme (see ecosystem-orbit.tsx) */
+  --orbit-surface: oklch(0.985 0.004 var(--brand-hue));
+  --orbit-grid: rgba(0, 0, 0, 0.06);
+  --orbit-guide: rgba(0, 0, 0, 0.1);
+  --orbit-spoke: rgba(0, 0, 0, 0.16);
+  --orbit-seg: rgba(0, 0, 0, 0.04);
+  --orbit-seg-hot: rgba(0, 0, 0, 0.12);
+  --orbit-seg-stroke: rgba(0, 0, 0, 0.18);
+  --orbit-seg-stroke-hot: rgba(0, 0, 0, 0.5);
+  --orbit-hole: oklch(0.985 0.004 var(--brand-hue));
+  --orbit-icon: rgba(0, 0, 0, 0.7);
+  --orbit-bubble-bg: rgba(255, 255, 255, 0.96);
+  --orbit-flow-l: 0.55;
+  --orbit-flow-c: 0.18;
+  --orbit-card-l1: 0.97;
+  --orbit-card-l2: 0.92;
+  --orbit-card-c: 0.05;
+  --orbit-card-border-l: 0.74;
+  --orbit-card-border-hot-l: 0.58;
+  --orbit-card-iconbg-l: 0.88;
+  --orbit-card-fg-l: 0.48;
 }
 
 .dark {
@@ -66,6 +88,28 @@
   --brand-logo-light: oklch(0.72 calc(var(--brand-chroma) * 0.9) var(--brand-hue));
   --brand-logo-mid: oklch(0.64 var(--brand-chroma) var(--brand-hue));
   --brand-logo-dark: oklch(0.56 var(--brand-chroma) var(--brand-hue));
+
+  /* Ecosystem-orbit figure tokens — dark theme */
+  --orbit-surface: #08080c;
+  --orbit-grid: rgba(255, 255, 255, 0.04);
+  --orbit-guide: rgba(255, 255, 255, 0.07);
+  --orbit-spoke: rgba(255, 255, 255, 0.1);
+  --orbit-seg: rgba(255, 255, 255, 0.05);
+  --orbit-seg-hot: rgba(255, 255, 255, 0.15);
+  --orbit-seg-stroke: rgba(255, 255, 255, 0.16);
+  --orbit-seg-stroke-hot: rgba(255, 255, 255, 0.55);
+  --orbit-hole: #0b0b14;
+  --orbit-icon: rgba(255, 255, 255, 0.85);
+  --orbit-bubble-bg: rgba(11, 11, 20, 0.95);
+  --orbit-flow-l: 0.84;
+  --orbit-flow-c: 0.16;
+  --orbit-card-l1: 0.3;
+  --orbit-card-l2: 0.24;
+  --orbit-card-c: 0.05;
+  --orbit-card-border-l: 0.52;
+  --orbit-card-border-hot-l: 0.72;
+  --orbit-card-iconbg-l: 0.42;
+  --orbit-card-fg-l: 0.86;
 }
 
 /* Map the ported shadcn/Arkitekt design tokens onto Fumadocs' theme variables

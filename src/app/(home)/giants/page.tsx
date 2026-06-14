@@ -12,6 +12,7 @@ type Giant = {
   name: string;
   href: string;
   description: string;
+  disclaimer?: string;
 };
 
 const giants: Giant[] = [
@@ -19,31 +20,31 @@ const giants: Giant[] = [
     name: 'Zarr',
     href: 'https://zarr.dev',
     description:
-      'Chunked, compressed, N-dimensional arrays — the storage backbone for streaming bioimage data.',
+      'Chunked, compressed, N-dimensional arrays — the storage backbone for streaming bioimage data. It powers mikro and elektro and pretty much all of our data needs on the server. ',
   },
   {
     name: 'Dask',
     href: 'https://www.dask.org',
     description:
-      'Parallel computing in Python that lets analysis scale from a laptop to a cluster without a rewrite.',
+      'Parallel computing in Python that lets analysis scale from a laptop to a cluster without a rewrite. We use it to stream data efficiently to the server.',
   },
   {
-    name: 'Apache Arrow',
-    href: 'https://arrow.apache.org',
+    name: 'Duck DB',
+    href: 'https://duckdb.org',
     description:
-      'A language-agnostic columnar memory format for moving structured data between tools efficiently.',
+      'A language-agnostic columnar memory format for moving structured data between tools efficiently. We use it to lazily load tabular data and metadata into the server and browser.',
   },
   {
     name: 'Strawberry GraphQL',
     href: 'https://strawberry.rocks',
     description:
-      'A type-first GraphQL library that powers the real-time API at the heart of the datahub.',
+      'A type-first GraphQL library that powers the real-time API at the heart of the datahub. Our apis are all defined as Python dataclasses and functions, and Strawberry generates a GraphQL server and client from them automatically.',
   },
   {
     name: 'Django',
     href: 'https://www.djangoproject.com',
     description:
-      'The batteries-included web framework underpinning the platform services and data model.',
+      'The batteries-included web framework underpinning the platform services and data model. We rely on it for all of our server-side logic, from auth to data brokering to the admin interface.',
   },
   {
     name: 'React',
@@ -58,10 +59,11 @@ const giants: Giant[] = [
       'The application framework that renders these docs and the apps surrounding the platform.',
   },
   {
-    name: 'OME-NGFF',
-    href: 'https://ngff.openmicroscopy.org',
+    name: 'Minio',
+    href: 'https://min.io',
+    disclaimer: 'Losing its open-source status at the time of writing, but still a giant in our book. ( we are investigating rustfst as a potential replacement )',
     description:
-      'The next-generation file format community standard for cloud-native bioimaging.',
+      'An open-source object storage system designed for cloud-native applications. We use it to store and manage our large-scale image data. No round trips just direct storage access.. ',
   },
   {
     name: 'Fumadocs',
@@ -107,6 +109,11 @@ export default function GiantsPage() {
               <p className="text-sm text-fd-muted-foreground">
                 {giant.description}
               </p>
+              {giant.disclaimer && (
+                <p className="mt-2 text-xs italic text-fd-muted-foreground/80">
+                  {giant.disclaimer}
+                </p>
+              )}
             </a>
           ))}
         </div>
