@@ -20,6 +20,7 @@ import {
   Workflow,
   Zap,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useInView } from './reveal';
 import { Logo } from '@/components/site/logo';
 
@@ -48,29 +49,30 @@ type Node = {
   label: string;
   sub: string;
   icon: typeof Network;
+  href: string; // docs page this node links to
   hue?: number;
   bidi?: boolean;
   placeholder?: boolean;
 };
 
 const services: Node[] = [
-  { label: 'Rekuest', sub: 'actions', icon: Network },
-  { label: 'Mikro', sub: 'images', icon: Layers },
-  { label: 'Kraph', sub: 'graph', icon: Share2 },
-  { label: 'Kabinet', sub: 'registry', icon: Box },
-  { label: 'Yours?', sub: 'extend the core', icon: Plus, placeholder: true },
+  { label: 'Rekuest', sub: 'actions', icon: Network, href: '/docs/design/services/rekuest' },
+  { label: 'Mikro', sub: 'images', icon: Layers, href: '/docs/design/services/mikro' },
+  { label: 'Kraph', sub: 'graph', icon: Share2, href: '/docs/design/services' },
+  { label: 'Kabinet', sub: 'registry', icon: Box, href: '/docs/design/services/next/kabinet' },
+  { label: 'Yours?', sub: 'add a service', icon: Plus, placeholder: true, href: '/docs/developers/contribute' },
 ];
 
 // The AI Agent is one of the apps (just another caller of actions).
 const apps: Node[] = [
-  { label: 'Acquire', sub: 'µManager', icon: Aperture, hue: 195 },
-  { label: 'Process', sub: 'Python', icon: Workflow, hue: 92 },
-  { label: 'Segment', sub: 'Docker', icon: Box, hue: 250 },
-  { label: 'Analyze', sub: 'Jupyter', icon: LineChart, hue: 40 },
-  { label: 'Visualize', sub: 'napari · Vizarr', icon: Eye, hue: 320 },
-  { label: 'React', sub: 'Raspberry Pi', icon: Zap, hue: 150, bidi: true },
-  { label: 'AI Agent', sub: 'autonomous', icon: Bot, hue: 292 },
-  { label: 'Your app', sub: 'bring your own', icon: Plus, placeholder: true },
+  { label: 'Acquire', sub: 'µManager', icon: Aperture, hue: 195, href: '/docs/apps/standalones/mikro-manager' },
+  { label: 'Process', sub: 'Python', icon: Workflow, hue: 92, href: '/docs/developers/python' },
+  { label: 'Segment', sub: 'Docker', icon: Box, hue: 250, href: '/docs/apps/plugins/segmentor' },
+  { label: 'Analyze', sub: 'Jupyter', icon: LineChart, hue: 40, href: '/docs/developers/python/classical' },
+  { label: 'Visualize', sub: 'napari · Vizarr', icon: Eye, hue: 320, href: '/docs/apps/standalones/mikro-napari' },
+  { label: 'React', sub: 'Raspberry Pi', icon: Zap, hue: 150, bidi: true, href: '/docs/apps' },
+  { label: 'AI Agent', sub: 'autonomous', icon: Bot, hue: 292, href: '/docs/apps' },
+  { label: 'Your app', sub: 'bring your own', icon: Plus, placeholder: true, href: '/docs/developers/python/plugin' },
 ];
 
 const N = apps.length;
@@ -374,7 +376,7 @@ export function EcosystemOrbit() {
     <section className="w-full pb-16">
       <div
         ref={revealRef}
-        className="relative isolate overflow-hidden rounded-3xl px-6 py-12 text-white sm:px-10 lg:px-14"
+        className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[#08080c] px-6 py-12 text-white sm:px-10 lg:px-14"
       >
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute left-1/2 top-[26%] h-[34rem] w-[40rem] -translate-x-1/2 rounded-full bg-primary/12 blur-[140px]" />
@@ -630,10 +632,15 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
           const ang = i * 72;
           return (
             <Centered key={s.label} x={px((RI + RO) / 2, ang)} y={py((RI + RO) / 2, ang)}>
-              <div className={`flex w-[92px] flex-col items-center text-center `} style={s.placeholder ? undefined : bloom(i * 70)}>
+              <Link
+                href={s.href}
+                title={s.placeholder ? 'Add your own service' : `Open ${s.label} docs`}
+                className={`flex w-[92px] cursor-pointer flex-col items-center text-center transition-colors hover:text-primary ${s.placeholder ? 'orbit-pulse' : ''}`}
+                style={s.placeholder ? undefined : bloom(i * 70)}
+              >
                 <s.icon className="mb-1 size-[16px]" style={{ color: s.placeholder ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.85)' }} />
                 <div className={`text-[12.5px] font-bold tracking-tight ${s.placeholder ? 'text-white/75' : ''}`}>{s.label}</div>
-              </div>
+              </Link>
             </Centered>
           );
         })}
@@ -645,6 +652,11 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
         return (
           <Centered key={app.label} x={x} y={y}>
             <div style={bloom(300 + i * 70)}>
+              <Link
+                href={app.href}
+                title={app.placeholder ? 'Create your own app' : `Open ${app.label} docs`}
+                className="block cursor-pointer transition-transform duration-200 hover:scale-[1.04]"
+              >
               {app.placeholder ? (
                 <div className={`orbit-pulse flex items-center rounded-2xl border border-dashed border-white/35 bg-white/[0.03] ${compact ? 'h-9 w-16' : 'h-[66px] w-[182px] gap-3 px-4'}`}>
                   {!compact && (
@@ -681,6 +693,7 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
                   )}
                 </div>
               )}
+              </Link>
             </div>
           </Centered>
         );
