@@ -320,6 +320,26 @@ function buildSteps(story: StoryId): Step[] {
   return acquireSteps();
 }
 
+// ── URL persistence (?story=…&step=…) — deep-linkable & back-navigable ──────
+function readStoryUrl(): { story: StoryId; step: number } {
+  if (typeof window === 'undefined') return { story: 'acquire', step: 0 };
+  const p = new URLSearchParams(window.location.search);
+  const s = p.get('story');
+  const story = (s && STORIES.some((x) => x.id === s) ? s : 'acquire') as StoryId;
+  const step = Math.max(0, Number.parseInt(p.get('step') ?? '0', 10) || 0);
+  return { story, step };
+}
+
+function writeStoryUrl(story: StoryId, step: number, push: boolean) {
+  if (typeof window === 'undefined') return;
+  const p = new URLSearchParams(window.location.search);
+  p.set('story', story);
+  p.set('step', String(step));
+  const url = `${window.location.pathname}?${p.toString()}${window.location.hash}`;
+  if (push) window.history.pushState(null, '', url);
+  else window.history.replaceState(null, '', url);
+}
+
 export function EcosystemOrbit() {
   const { ref: revealRef, inView } = useInView<HTMLDivElement>(0.1);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -340,6 +360,51 @@ export function EcosystemOrbit() {
   const steps = useMemo(() => buildSteps(story), [story]);
   const log = Object.entries(status);
 
+  // URL sync bookkeeping
+  const applyingFromUrl = useRef(false); // change came from the URL (don't reset/rewrite)
+  const firstWrite = useRef(true); // skip the very first write (preserve incoming URL)
+  const pushNext = useRef(false); // next change is a manual nav → add a history entry
+  const prevStory = useRef<StoryId>(story);
+
+  // read initial state from the URL, and follow browser back/forward
+  useEffect(() => {
+    const apply = () => {
+      const params = new URLSearchParams(window.location.search);
+      const deepLinked = params.has('story') || params.has('step');
+      const { story: s, step } = readStoryUrl();
+      applyingFromUrl.current = true;
+      setStory(s);
+      setCur(step);
+      if (deepLinked) setPlaying(false); // arrived via a link — don't auto-play
+    };
+    apply();
+    window.addEventListener('popstate', apply);
+    return () => window.removeEventListener('popstate', apply);
+  }, []);
+
+  // keep cur within range (e.g. an out-of-range deep-linked step)
+  useEffect(() => {
+    if (cur > steps.length - 1) setCur(steps.length - 1);
+  }, [cur, steps]);
+
+  // write story + step to the URL (replace while it plays, push for manual nav)
+  useEffect(() => {
+    if (firstWrite.current) {
+      firstWrite.current = false;
+      prevStory.current = story;
+      return;
+    }
+    if (applyingFromUrl.current) {
+      applyingFromUrl.current = false;
+      prevStory.current = story;
+      return;
+    }
+    const push = story !== prevStory.current || pushNext.current;
+    pushNext.current = false;
+    prevStory.current = story;
+    writeStoryUrl(story, cur, push);
+  }, [story, cur]);
+
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -351,6 +416,7 @@ export function EcosystemOrbit() {
   // restart the graph at step 0 when the story changes — but keep the user's
   // play/pause choice (once paused into manual mode, stay there).
   useEffect(() => {
+    if (applyingFromUrl.current) return; // URL-driven: keep the deep-linked step
     setCur(0);
     setDatum(null);
     setDatumAt(null);
@@ -422,6 +488,7 @@ export function EcosystemOrbit() {
   }, [cur, steps, inView, playing]);
 
   const goTo = (i: number) => {
+    pushNext.current = true;
     setPlaying(false);
     setCur(((i % steps.length) + steps.length) % steps.length);
   };
@@ -431,9 +498,11 @@ export function EcosystemOrbit() {
     if (!inView) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
+        pushNext.current = true;
         setPlaying(false);
         setCur((c) => (c - 1 + steps.length) % steps.length);
       } else if (e.key === 'ArrowRight') {
+        pushNext.current = true;
         setPlaying(false);
         setCur((c) => (c + 1) % steps.length);
       }
@@ -599,11 +668,10 @@ function ControlPanel({
 }
 
 function Diagram({ inView, flows, hot, status, userMsg, desc, datum, datumAt, compact }: { inView: boolean; flows: Flow[]; hot: Set<string>; status: Record<string, { text: string; progress: number }>; userMsg: string | null; desc: string; datum: Datum | null; datumAt: string | null; compact: boolean }) {
-  const bloom = (delay: number): CSSProperties => ({
+  // Quick, uniform fade-in (no scale, no stagger) — the `delay` arg is ignored.
+  const bloom = (_delay: number): CSSProperties => ({
     opacity: inView ? 1 : 0,
-    transform: inView ? 'scale(1)' : 'scale(0.84)',
-    transition: 'opacity .6s ease, transform .6s cubic-bezier(.22,1,.36,1)',
-    transitionDelay: `${delay}ms`,
+    transition: 'opacity .25s ease',
   });
 
   return (
@@ -622,7 +690,7 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, datum, datumAt, co
           const x2 = CX + dx * (R_APP - 60);
           const y2 = CY + dy * (R_APP - 60);
           if (app.bidi) {
-            return <line key={app.label} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="2" style={{ stroke: `oklch(var(--orbit-flow-l) 0.16 150)`, opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: '500ms' }} />;
+            return <line key={app.label} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="2" style={{ stroke: `oklch(var(--orbit-flow-l) 0.16 150)`, opacity: inView ? 1 : 0, transition: 'opacity .25s ease' }} />;
           }
           return (
             <line
@@ -630,7 +698,7 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, datum, datumAt, co
               x1={x1} y1={y1} x2={x2} y2={y2}
               strokeWidth="1.4"
               strokeDasharray={app.placeholder ? '4 5' : undefined}
-              style={{ stroke: app.placeholder ? 'var(--orbit-spoke)' : `oklch(var(--orbit-card-border-l) 0.12 ${app.hue} / 0.7)`, opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: `${300 + i * 70}ms` }}
+              style={{ stroke: app.placeholder ? 'var(--orbit-spoke)' : `oklch(var(--orbit-card-border-l) 0.12 ${app.hue} / 0.7)`, opacity: inView ? 1 : 0, transition: 'opacity .25s ease' }}
             />
           );
         })}
@@ -652,8 +720,7 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, datum, datumAt, co
                 stroke: isHot ? 'var(--orbit-seg-stroke-hot)' : 'var(--orbit-seg-stroke)',
                 strokeWidth: isHot ? 1.6 : 1,
                 opacity: inView ? 1 : 0,
-                transition: 'opacity .5s ease, fill .25s ease, stroke .25s ease',
-                transitionDelay: `${i * 70}ms`,
+                transition: 'opacity .25s ease, fill .25s ease, stroke .25s ease',
               }}
             />
           );
@@ -663,7 +730,7 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, datum, datumAt, co
         <circle cx={CX} cy={CY} r={RO + 8} fill="none" style={{ stroke: 'oklch(var(--orbit-flow-l) 0.16 var(--brand-hue))', strokeWidth: 2, opacity: hot.has('server') ? 0.85 : 0, transition: 'opacity .25s ease' }} />
 
         {/* actions-in arrow (from the User node toward the server) */}
-        <line x1={ENTRY.x + 34} y1={ENTRY.y} x2={px(RO + 4, 270)} y2={py(RO + 4, 270)} strokeWidth="2.6" style={{ stroke: 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) var(--brand-hue))', opacity: inView ? 1 : 0, transition: 'opacity .6s ease', transitionDelay: '650ms' }} />
+        <line x1={ENTRY.x + 34} y1={ENTRY.y} x2={px(RO + 4, 270)} y2={py(RO + 4, 270)} strokeWidth="2.6" style={{ stroke: 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) var(--brand-hue))', opacity: inView ? 1 : 0, transition: 'opacity .25s ease' }} />
         <text x={(ENTRY.x + 34 + CX - RO) / 2} y={ENTRY.y - 14} fontFamily="var(--font-mono, monospace)" fontSize="11" fontWeight="500" letterSpacing="1.6" textAnchor="middle" style={{ fill: 'oklch(var(--orbit-flow-l) 0.13 var(--brand-hue))' }}>
           ISSUE ACTIONS
         </text>
