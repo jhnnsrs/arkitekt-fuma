@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ImageIcon } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -31,10 +32,16 @@ export function BentoGrid({
 
 export function BentoCard({
   glow = false,
+  href,
+  hrefLabel,
   className,
   children,
 }: {
   glow?: boolean;
+  /** When set, the whole card becomes a link to this docs page. */
+  href?: string;
+  /** Accessible label for the stretched link (defaults to "Learn more"). */
+  hrefLabel?: string;
   className?: string;
   children: ReactNode;
 }) {
@@ -54,10 +61,28 @@ export function BentoCard({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-3xl border border-fd-border bg-fd-card/50 backdrop-blur',
+        'group relative overflow-hidden rounded-3xl border border-fd-border bg-fd-card/50 backdrop-blur',
+        href && 'transition-colors hover:border-fd-primary/50',
         className,
       )}
     >
+      {/* Stretched link: covers the whole card so any click on a non-interactive
+          area navigates. Interactive children opt back in with `relative z-10`. */}
+      {href && (
+        <Link
+          href={href}
+          aria-label={hrefLabel ?? 'Learn more'}
+          className="absolute inset-0 z-[1]"
+        />
+      )}
+      {href && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-4 top-4 z-[2] grid size-8 place-items-center rounded-full border border-fd-border bg-fd-card/80 text-fd-muted-foreground opacity-0 transition group-hover:opacity-100 group-hover:text-fd-primary"
+        >
+          <ArrowUpRight className="size-4" />
+        </span>
+      )}
       {children}
     </div>
   );

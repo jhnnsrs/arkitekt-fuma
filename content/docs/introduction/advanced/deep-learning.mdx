@@ -16,7 +16,7 @@ by showing you how to create a simple "deep learning enabled" workflow, that you
 To get started with deep learning and Arkitekt you should:
 
 - Have a basic understanding of deep learning, in the sense of what the words "Training" and "Inference" mean.
-- Have gone through the [basics of Arkitekt](/docs/introduction/first_steps).
+- Have gone through the [basics of Arkitekt](/docs/introduction/first-steps).
 - Have a CUDA capable GPU. If you don't have a GPU, you should still be able to follow along, but the prediction
   will be very slow.
 - Either Mikro-Napari or Fiji with MikroJ installed. If you don't have either of these, you can still follow along, but you won't be able to run the workflow.
@@ -25,7 +25,7 @@ To get started with deep learning and Arkitekt you should:
 
 We would like to create a workflow that can take an image of nuclei in a cell culture and predict the segmentation of the nuclei.
 We will be using a deep learning model based on [Stardist](https://github.com/stardist/stardist) to do the prediction.
-We will be using the same dataset that we have used in the [basics of Arkitekt](/docs/introduction/first_steps).
+We will be using the same dataset that we have used in the [basics of Arkitekt](/docs/introduction/first-steps).
 
 <img src="/docs/introduction/advanced/segmentation.png" alt="Nuclei segmentation" />
 
@@ -68,7 +68,7 @@ So how do we install Stardist? Well just like any other plugin. You can add the 
 <br />
 <br />
 
-And then you can install the latest version of segmentor by deploying it as an plugin, as you learned in the [basics of Arkitekt](/docs/introduction/first_steps/first_tool).
+And then you can install the latest version of segmentor by deploying it as an plugin, as you learned in the [basics of Arkitekt](/docs/introduction/first-steps/first-tool).
 For the rest of this tutorial we will assume that you have installed the `segmentor` plugin.
 
 ### Testing the plugin
@@ -91,7 +91,7 @@ where it will be processed by the `Segment Fluo2` node of the `segmentor` plugin
   </small>
 </div>
 
-Just import this workflow into your Arkitekt instance, and deploy it on the `reaktor` scheduler just like you did in the [basics of Arkitekt](/docs/introduction/first_steps/first_workflow).
+Just import this workflow into your Arkitekt instance, and deploy it on the `reaktor` scheduler just like you did in the [basics of Arkitekt](/docs/introduction/first-steps/first-workflow).
 Feel free to also create that workflow on your own, if you want to get some more practice.
 
 After reserving the workflow, you can run it directly from the `Dashboard` of Orkestrator. Just make sure that you have an image open in Fiji, and then click on the `Run` button of the workflow.

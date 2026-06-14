@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoreBento, HomeBento } from '@/components/bento';
-import { Ecosystem, EcosystemOrbit, RobotScene } from '@/components/marketing';
+import { Ecosystem, EcosystemOrbit } from '@/components/marketing';
 import { gitConfig } from '@/lib/shared';
 
 const features = [
@@ -144,32 +144,6 @@ export default function HomePage() {
       {/* ───────────────────────── Bento ──────────────────────── */}
       <HomeBento />
 
-
-      {/* ─────────────────────── Orchestration ─────────────────── */}
-      <section className="w-full pb-16">
-        <div className="mb-6 max-w-xl">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            One node drives the next
-          </h2>
-          <p className="mt-2 text-fd-muted-foreground">
-            Arkitekt brokers commands and data between machines — one node can
-            steer an instrument, a GPU or a robot sitting on another. Drag to
-            look around.
-          </p>
-        </div>
-        <div className="relative h-[26rem] overflow-hidden rounded-3xl border border-white/10 bg-[#0a0a0c] sm:h-[32rem]">
-          {/* brand glow behind the scene, echoing the hero */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 -z-0"
-          >
-            <div className="absolute -left-16 top-1/3 h-[24rem] w-[24rem] rounded-full bg-primary/20 blur-[120px]" />
-            <div className="absolute -right-10 bottom-0 h-[20rem] w-[20rem] rounded-full bg-primary/10 blur-[110px]" />
-          </div>
-          <RobotScene />
-        </div>
-      </section>
-
       {/* ─────────────────────── Core services ─────────────────── */}
       <CoreBento />
 
@@ -202,7 +176,7 @@ export default function HomePage() {
             first tool.
           </p>
           <Button asChild size="lg" className="mt-2 rounded-full">
-            <Link href="/docs/introduction/first_steps">
+            <Link href="/docs/introduction/first-steps">
               Start the tutorial
               <ArrowRight className="size-4" />
             </Link>

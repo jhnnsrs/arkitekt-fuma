@@ -5,6 +5,9 @@ import { Terminal } from '@/components/docs/terminal';
 import { BentoCard, BentoGrid, ScreenshotSlot } from './primitives';
 import { AsyncApiCard } from './async-api-card';
 import { ProvenanceCard } from './provenance-card';
+import { StateCard } from './state-card';
+import { DeclareCard } from './declare-card';
+import { BlokCard } from './blok-card';
 
 /** The main home-page bento grid. */
 export function HomeBento() {
@@ -13,6 +16,9 @@ export function HomeBento() {
       <BentoGrid>
         {/* (async) API — everything is a controllable, progress-yielding task */}
         <AsyncApiCard />
+
+        {/* observable state — a robot whose state updates live */}
+        <StateCard />
 
         {/* wide media — the Orkestrator managing microscopy data */}
         <BentoCard className="p-2 sm:col-span-2">
@@ -44,6 +50,12 @@ export function HomeBento() {
 
         {/* provenance — everything is audited & recorded */}
         <ProvenanceCard />
+
+        {/* declare — programmatic workflows resolved across remote agents */}
+        <DeclareCard />
+
+        {/* bloks — dashboards declared in JSX from the component catalog */}
+        <BlokCard />
 
         {/* customizability copy + install CTA */}
         <BentoCard className="flex flex-col justify-between gap-6 p-6 sm:p-8">

@@ -3,7 +3,7 @@ title: Installation
 description: How to install the Arkitekt platform using the graphical installer, Docker-Compose, or Helm charts, including system requirements.
 ---
 
-import { DownloadGrid } from "@/components/docs";
+import { DownloadGrid, DeploymentStrategies, MeshTunnel } from "@/components/docs";
 
 ## Before we start [#before-we-start]
 
@@ -35,20 +35,20 @@ genuine tradeoff rather than just a difficulty dial:
   want to go this route, it's worth asking your local imaging facility whether they run (or would be
   willing to run) a partner server; that is exactly the kind of place this model is meant for.
 
-* **Deploy locally and join the mesh using our community server.** Here you install and run the
+* **Deploy locally and join the mesh using our coordination server.** Here you install and run the
   Arkitekt server yourself, on a machine in your lab, so your data and compute never leave your
   control. The only thing you borrow is the *meeting*: rather than standing up your own coordination
-  infrastructure, your server and apps register with Arkitekt's community-operated **community server**,
+  infrastructure, your server and apps register with Arkitekt's community-operated **coordination server**,
   which brokers the introduction and helps endpoints find each other across NATs and networks. Once
-  they have met, traffic flows directly peer-to-peer — the community server never sees your workload
+  they have met, traffic flows directly peer-to-peer — the coordination server never sees your workload
   data (see [The Arkitekt Mesh](#arkitekt-mesh) for the mechanics). This is the **recommended starting
   point for most labs**: you keep your data, you avoid running coordination infrastructure, and it
   works across network boundaries out of the box. The tradeoff is a dependency you don't control — if
-  the community server is down, new connections can't be brokered until it is back, and you are
+  the coordination server is down, new connections can't be brokered until it is back, and you are
   trusting a third party to operate the control plane (auth and discovery), even if never the data.
 
-* **Self-host everything, including your own community server.** The fully independent option: you run
-  the platform *and* your own community server, so nothing — not the data, not even the meeting —
+* **Self-host everything, including your own coordination server.** The fully independent option: you run
+  the platform *and* your own coordination server, so nothing — not the data, not even the meeting —
   depends on anyone outside your walls. This is plainly the most work: you operate, update, and secure
   the coordinator yourself, and reachability across networks becomes your problem to solve rather than
   something you lean on shared infrastructure for. In return you get complete autonomy and the ability
@@ -59,26 +59,28 @@ genuine tradeoff rather than just a difficulty dial:
 
 <Callout type="info" title="Two kinds of 'server'">
   It is worth separating two things that both get called a "server". The **central server** is the
-  Arkitekt platform itself — it holds your data and runs the services. The **community server** is the
+  Arkitekt platform itself — it holds your data and runs the services. The **coordination server** is the
   *coordinator*: it only handles auth and discovery so that apps and servers can meet, and it never
   touches your workload data. The three strategies above are really just different answers to *who runs
-  the central server* and *who runs the community server*.
+  the central server* and *who runs the coordination server*.
 </Callout>
+
+<DeploymentStrategies />
 
 At a glance, here is how the three strategies trade off against one another. Note that *where the apps
 run* is the same in every column — apps power the heavy actions and run anywhere regardless of which
 strategy you pick; what really changes is **who runs the servers** and, as a result, where your data
 lives and what you depend on.
 
-| | Kommunity partner | Local + community server | Fully self-hosted |
+| | Kommunity partner | Local + coordination server | Fully self-hosted |
 |---|---|---|---|
 | **Who runs the central server** | The partner | You, in your lab | You |
-| **Who runs the community server** | The partner | Arkitekt community | You |
+| **Who runs the coordination server** | The partner | Arkitekt community | You |
 | **Where the apps run** | Anywhere | Anywhere | Anywhere |
 | **Where your data lives** | Partner's infrastructure | Your lab | Your lab |
 | **Setup & ops effort** | None | Low–moderate (server only) | High (server *and* coordinator) |
 | **External dependency** | Total — on the partner | Discovery & auth only | None |
-| **Works offline / air-gapped** | No | No (needs the community server to broker) | Yes |
+| **Works offline / air-gapped** | No | No (needs the coordination server to broker) | Yes |
 | **Data control & privacy** | Lowest — you trust the partner | High — P2P, coordinator sees no data | Highest — nothing leaves your walls |
 | **Readiness** | Demo-only for now | Recommended for most labs | Production / advanced |
 | **Best for** | A first look without any setup | Most labs that want data kept local | Air-gapped sites, CI, tear-up / teardown testing |
@@ -210,6 +212,12 @@ In the language we use elsewhere in these docs, the mesh separates the **control
   It is the part that needs to be reachable and the part that knows *that* two endpoints want to talk.
 * The **data plane** is the direct connection between your endpoints. This is where the real data moves, and it is established peer-to-peer
   so that large transfers stay fast and never round-trip through a central bottleneck.
+
+Under the hood the data plane is an encrypted **WireGuard** tunnel, and the coordinator is built on
+[**Ionscale**](https://github.com/jsiebens/ionscale) (a self-hostable Tailscale control plane). This part of the platform is still
+**optional and experimental** — the diagram below shows how an outside app reaches a platform that lives behind NAT:
+
+<MeshTunnel />
 
 <Callout type="info" title="The coordinator never sees your data">
   This is the single most important thing to understand about the mesh: the coordinator handles **auth and discovery only**, and your **workload

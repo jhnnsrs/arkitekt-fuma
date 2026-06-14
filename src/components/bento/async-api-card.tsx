@@ -91,7 +91,11 @@ export function AsyncApiCard() {
   }, []);
 
   return (
-    <BentoCard className="grid grid-cols-1 gap-6 p-6 sm:col-span-2 sm:p-8 lg:grid-cols-2 lg:items-center">
+    <BentoCard
+      href="/docs/developers/python/plugin/usage"
+      hrefLabel="Learn about actions"
+      className="grid grid-cols-1 gap-6 p-6 sm:col-span-2 sm:p-8 lg:grid-cols-2 lg:items-center"
+    >
       {/* copy */}
       <div>
         <span className="font-mono text-[11px] tracking-[0.16em] text-fd-primary">
@@ -108,7 +112,7 @@ export function AsyncApiCard() {
         </p>
 
         {/* async / sync toggle */}
-        <div className="mt-5 inline-flex rounded-lg border border-fd-border bg-[#0a0a0c] p-1 font-mono text-[12px]">
+        <div className="relative z-10 mt-5 inline-flex rounded-lg border border-fd-border bg-[#0a0a0c] p-1 font-mono text-[12px]">
           {(['async', 'sync'] as const).map((m) => (
             <button
               key={m}

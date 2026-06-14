@@ -4,7 +4,7 @@
     "index",
     "containers",
     "gpu",
-    "lazy_loading",
+    "lazy-loading",
     "vpn",
     "graphql"
   ]
