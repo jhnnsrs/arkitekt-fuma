@@ -153,26 +153,42 @@ type Step = {
   hold?: number; // pause after settling before auto-advancing (ms)
 };
 
-// One brokered task: in → dispatch → work → upload → finished.
-// NOTE: the "finished" step comes AFTER the upload step by design.
+// One brokered task: in → Rekuest routes → dispatch → work → upload → Mikro
+// saves → finished. The service steps (Rekuest routing, Mikro saving) make the
+// core's role explicit; "finished" deliberately comes after the save.
 function brokerSteps(title: string, srcPt: Pt, srcDeg: number, t: number, inColor: string, descIn: string, descRun: string): Step[] {
   const label = apps[t].label;
   const ang = appAngle(t);
   return [
     { title, desc: descIn, hot: ['server'], edge: { from: srcPt, to: serverEdge(srcDeg), color: inColor }, dur: 540, hold: 220 },
+    { title, desc: 'Rekuest routes the request to the right app.', hot: ['Rekuest', 'server'], hold: 650 },
     { title, desc: descRun, hot: [label], edge: { from: serverEdge(ang), to: spokeOuter(t), color: appColor(t) }, bubbles: [{ label, text: 'Action received — starting…', progress: 0 }], dur: 540, hold: 450 },
     { title, desc: `${label} is running…`, hot: [label], bubbles: [{ label, text: 'Running…', progress: 1 }], fill: label, dur: 1100, hold: 250 },
-    { title, desc: `${label} uploads its results to the server…`, hot: [label, 'Mikro', 'server'], edge: { from: spokeOuter(t), to: serverEdge(ang), color: DATA }, bubbles: [{ label, text: 'Uploading data…', progress: 1 }], dur: 600, hold: 250 },
+    { title, desc: `${label} uploads its results to the server…`, hot: [label, 'server'], edge: { from: spokeOuter(t), to: serverEdge(ang), color: DATA }, bubbles: [{ label, text: 'Uploading data…', progress: 1 }], dur: 600, hold: 250 },
+    { title, desc: 'Mikro saves the results to the database.', hot: ['Mikro', 'server'], bubbles: [{ label, text: 'Saving…', progress: 1 }], hold: 650 },
     { title, desc: `Data stored — ${label} finished ✓`, hot: [label, 'Mikro', 'server'], bubbles: [{ label, text: 'Finished ✓ · stored', progress: 1 }], hold: 700 },
   ];
+}
+
+// Final beat of a user-driven story: the server hands the results back to the user.
+function deliverStep(title: string): Step {
+  return {
+    title,
+    desc: 'Your results are delivered straight back to you.',
+    hot: ['server'],
+    edge: { from: serverEdge(270), to: { x: ENTRY.x + 34, y: ENTRY.y }, color: DATA },
+    user: 'here they are :)',
+    dur: 620,
+    hold: 1900,
+  };
 }
 
 function manualSteps(): Step[] {
   const T = 'Run · user-driven';
   return [
     { title: T, desc: 'The user issues an action from the UI.', hot: [], user: 'do this task', hold: 1000 },
-    ...brokerSteps(T, ENTRY, 270, findApp('Process'), CTRL, 'The action travels to the Arkitekt server.', 'Rekuest dispatches it to the Process app.'),
-    { title: T, desc: 'Done — results stored. Ready for the next action.', hot: [], hold: 1300 },
+    ...brokerSteps(T, ENTRY, 270, findApp('Process'), CTRL, 'The action travels to the Arkitekt server.', 'The server dispatches it to the Process app.'),
+    deliverStep(T),
   ];
 }
 
@@ -202,7 +218,8 @@ function agentSteps(): Step[] {
       hold: 350,
     });
   });
-  steps.push({ title: T, desc: 'All steps reported back — workflow complete.', hot: [], bubbles: [{ label: 'AI Agent', text: 'Workflow complete ✓', progress: 1 }], hold: 1400 });
+  steps.push({ title: T, desc: 'All steps reported back — workflow complete.', hot: ['AI Agent'], bubbles: [{ label: 'AI Agent', text: 'Workflow complete ✓', progress: 1 }], hold: 1000 });
+  steps.push(deliverStep(T));
   return steps;
 }
 
@@ -261,7 +278,7 @@ function parallelSteps(): Step[] {
     {
       title: T,
       desc: 'Both upload their results to the server…',
-      hot: [la, lb, 'Mikro', 'server'],
+      hot: [la, lb, 'server'],
       edges: [
         { from: spokeOuter(a), to: serverEdge(aA), color: DATA },
         { from: spokeOuter(b), to: serverEdge(bA), color: DATA },
@@ -275,14 +292,25 @@ function parallelSteps(): Step[] {
     },
     {
       title: T,
+      desc: 'Mikro saves both results to the database.',
+      hot: ['Mikro', 'server'],
+      bubbles: [
+        { label: la, text: 'Saving…', progress: 1 },
+        { label: lb, text: 'Saving…', progress: 1 },
+      ],
+      hold: 650,
+    },
+    {
+      title: T,
       desc: 'Both finished — data stored ✓',
       hot: [la, lb, 'Mikro', 'server'],
       bubbles: [
         { label: la, text: 'Finished ✓ · stored', progress: 1 },
         { label: lb, text: 'Finished ✓ · stored', progress: 1 },
       ],
-      hold: 1300,
+      hold: 1000,
     },
+    deliverStep(T),
   ];
 }
 
@@ -391,6 +419,22 @@ export function EcosystemOrbit() {
     setCur(((i % steps.length) + steps.length) % steps.length);
   };
 
+  // ← / → step through the graph and stop live (auto-play) mode
+  useEffect(() => {
+    if (!inView) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setPlaying(false);
+        setCur((c) => (c - 1 + steps.length) % steps.length);
+      } else if (e.key === 'ArrowRight') {
+        setPlaying(false);
+        setCur((c) => (c + 1) % steps.length);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [inView, steps.length]);
+
   return (
     <section className="w-full pb-16">
       <div
@@ -430,7 +474,7 @@ export function EcosystemOrbit() {
           <div className="order-1 w-full lg:order-2 lg:flex-1">
             <div ref={wrapRef} className="relative w-full" style={{ height: BASE_H * scale }}>
               <div className="absolute left-0 top-0 origin-top-left" style={{ width: BASE_W, height: BASE_H, transform: `scale(${scale})` }}>
-                <Diagram inView={inView} flows={flows} hot={hot} status={status} userMsg={userMsg} compact={scale < 0.5} />
+                <Diagram inView={inView} flows={flows} hot={hot} status={status} userMsg={userMsg} desc={desc} compact={scale < 0.5} />
               </div>
             </div>
 
@@ -547,7 +591,7 @@ function ControlPanel({
   );
 }
 
-function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boolean; flows: Flow[]; hot: Set<string>; status: Record<string, { text: string; progress: number }>; userMsg: string | null; compact: boolean }) {
+function Diagram({ inView, flows, hot, status, userMsg, desc, compact }: { inView: boolean; flows: Flow[]; hot: Set<string>; status: Record<string, { text: string; progress: number }>; userMsg: string | null; desc: string; compact: boolean }) {
   const bloom = (delay: number): CSSProperties => ({
     opacity: inView ? 1 : 0,
     transform: inView ? 'scale(1)' : 'scale(0.84)',
@@ -650,15 +694,21 @@ function Diagram({ inView, flows, hot, status, userMsg, compact }: { inView: boo
         </div>
       </Centered>
 
-      {/* center hub */}
+      {/* center hub — shows the live server message while the server works,
+          otherwise the Arkitekt mark */}
       <Centered x={CX} y={CY}>
-        <div
-          className="grid  place-items-center rounded-full "
-        >
-          <div className="text-center">
-            <Logo className="mx-auto size-[80px]" />
-            <div className="mt-1.5 text-[15px] font-bold tracking-tight">Arkitekt</div>
-          </div>
+        <div className="grid place-items-center rounded-full">
+          {hot.has('server') ? (
+            <div key={desc} className="animate-pop-in w-[160px] text-center">
+              <div className="font-mono text-[9px] tracking-[0.18em] text-primary/80">SERVER</div>
+              <p className="mt-1.5 text-[12.5px] font-medium leading-snug text-fd-foreground">{desc}</p>
+            </div>
+          ) : (
+            <div className="text-center">
+              <Logo className="mx-auto size-[80px]" />
+              <div className="mt-1.5 text-[15px] font-bold tracking-tight">Arkitekt</div>
+            </div>
+          )}
         </div>
       </Centered>
 
