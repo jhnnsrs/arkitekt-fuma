@@ -3,12 +3,12 @@
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import React from "react";
-import { useService } from "../lib/arkitekt/provider";
-import { App, Guard } from "../lib/app/App";
+import { useService } from "@/lib/arkitekt/provider";
+import { App, Guard } from "@/lib/app/App";
 import {
   useCreateGithubRepoMutation,
   useListGithubReposQuery,
-} from "../lib/kabinet/api/graphql";
+} from "@/lib/kabinet/api/graphql";
 
 const CREATE_REPO_MUTATION = gql`
   mutation ($branch: String!, $repo: String!, $user: String!) {

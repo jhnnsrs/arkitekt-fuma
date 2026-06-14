@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from 'react';
 import { ThemeSwitch } from 'fumadocs-ui/layouts/shared/slots/theme-switch';
-import { Connector } from '@/components/arkitekt-connector';
+import { Connector } from '@/components/arkitekt/connector-client';
 
 // Drop-in replacement for Fumadocs' `themeSwitch` slot that renders the
 // Arkitekt connector (login / account) right next to the GitHub icon and the

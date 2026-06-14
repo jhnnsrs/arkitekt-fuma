@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, Sparkles } from 'lucide-react';
-import { SectionBackground } from '@/components/section-background';
+import { SectionBackground } from '@/components/marketing';
 import { appName } from '@/lib/shared';
 
 export const metadata: Metadata = {
@@ -109,11 +109,10 @@ export default function ShowcasePage() {
 
         <div className="mt-12 flex flex-col items-center gap-4 rounded-2xl border border-fd-border bg-fd-card/50 px-8 py-12 text-center backdrop-blur">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Building something with Arkitekt?
+            Using Arkitekt in your lab?
           </h2>
           <p className="max-w-xl text-fd-muted-foreground">
-            We&apos;d love to feature your project. Share what you&apos;ve built
-            and help others discover what&apos;s possible.
+            Share what you&apos;ve built and we&apos;ll add it here.
           </p>
           <Link
             href="/docs/showcases"

@@ -17,10 +17,69 @@ import { App } from "@/lib/app/App";
 import { aliasToHttpPath } from "@/lib/arkitekt/alias/helpers";
 import { discover } from "@/lib/arkitekt/fakts/discover";
 import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const explorer = explorerPlugin({} as any);
+
+/** Convert a computed `rgb(r, g, b)` string to an `H, S%, L%` triple for GraphiQL. */
+const rgbToHslTriple = (rgb: string): string | null => {
+  const m = rgb.match(/[\d.]+/g);
+  if (!m || m.length < 3) return null;
+  const [r, g, b] = m.slice(0, 3).map((v) => Number(v) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  let h = 0;
+  let s = 0;
+  if (d) {
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      default:
+        h = (r - g) / d + 4;
+    }
+    h /= 6;
+  }
+  return `${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%`;
+};
+
+/**
+ * Mirror the site's live `--color-fd-primary` brand token into the custom
+ * properties GraphiQL's stylesheet reads, so the explorer's accents follow the
+ * dynamic brand hue (and light/dark) instead of GraphiQL's stock pink. Resolving
+ * the token via a probe element turns the site's oklch value into rgb, which we
+ * convert to the HSL triple GraphiQL expects.
+ */
+const useGraphiqlBrandSync = () => {
+  const { resolvedTheme } = useTheme();
+  React.useEffect(() => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--color-fd-primary)";
+    probe.style.display = "none";
+    document.body.appendChild(probe);
+    const rgb = getComputedStyle(probe).color;
+    document.body.removeChild(probe);
+
+    const triple = rgbToHslTriple(rgb);
+    if (!triple) return;
+    const [h, s, l] = triple.split(",").map((p) => parseFloat(p));
+    const root = document.documentElement.style;
+    root.setProperty("--ark-gql-primary", triple);
+    // a softer companion accent for links / secondary chrome
+    const sl = Math.min(96, l + (resolvedTheme === "dark" ? 8 : 10));
+    root.setProperty(
+      "--ark-gql-secondary",
+      `${h}, ${Math.max(0, s - 12)}%, ${sl}%`,
+    );
+  }, [resolvedTheme]);
+};
 
 /**
  * Namespace GraphiQL's persisted state (query, headers, tabs, …) per endpoint so
@@ -102,7 +161,7 @@ const ServiceSwitcher = ({
   deployment?: string;
 }) => {
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-fd-border bg-fd-card/60 px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-3 border-b border-fd-border bg-fd-card/60 px-5 pb-4 pt-6 backdrop-blur">
       <div className="flex items-center gap-2 text-fd-foreground">
         <Network className="size-4 text-fd-primary" />
         <span className="text-sm font-medium">API Explorer</span>
@@ -267,6 +326,7 @@ const ExplorerConnect = () => {
 };
 
 export const Graph = (_props: Record<string, unknown>) => {
+  useGraphiqlBrandSync();
   return (
     <div className="h-full min-h-0 w-full overflow-hidden">
       <App.Guard notConnectedFallback={<ExplorerConnect />}>

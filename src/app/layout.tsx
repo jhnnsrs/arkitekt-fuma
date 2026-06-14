@@ -1,6 +1,6 @@
 import { Inter } from 'next/font/google';
-import { Provider } from '@/components/provider';
-import { BrandColorScript } from '@/components/brand-color';
+import { Provider } from '@/components/site';
+import { BrandColorScript } from '@/components/site';
 import './global.css';
 
 const inter = Inter({

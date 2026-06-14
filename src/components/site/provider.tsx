@@ -1,8 +1,8 @@
 'use client';
-import SearchDialog from '@/components/search';
+import SearchDialog from './search';
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import { type ReactNode } from 'react';
-import { ArkitektRoot } from '@/components/arkitekt-root';
+import { ArkitektRoot } from '@/components/arkitekt/root';
 
 export function Provider({ children }: { children: ReactNode }) {
   return (

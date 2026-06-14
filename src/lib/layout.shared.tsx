@@ -1,7 +1,7 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import { Atom, BookOpen, Network, Newspaper, Sparkles } from 'lucide-react';
-import { BrandColorPicker } from '@/components/brand-color';
-import { Logo } from '@/components/logo';
+import { BrandColorPicker } from '@/components/site';
+import { Logo } from '@/components/site';
 import { appName, gitConfig } from './shared';
 
 export function baseOptions(): BaseLayoutProps {

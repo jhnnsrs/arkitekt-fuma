@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Newspaper } from 'lucide-react';
-import { SectionBackground } from '@/components/section-background';
+import { SectionBackground } from '@/components/marketing';
 import { appName } from '@/lib/shared';
 
 export const metadata: Metadata = {

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Boxes,
-  Copy,
   GitFork,
   Microscope,
   Network,
@@ -10,7 +9,9 @@ import {
   Workflow,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BentoCard, BentoGrid, ScreenshotSlot } from '@/components/bento';
+import { CoreBento, HomeBento } from '@/components/bento';
+import { Ecosystem } from '@/components/marketing';
+import { RobotScene } from '@/components/marketing';
 import { gitConfig } from '@/lib/shared';
 
 const features = [
@@ -64,19 +65,19 @@ export default function HomePage() {
           {/* badge */}
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary backdrop-blur">
             <Sparkles className="size-3.5" />
-            The open platform for bioimage analysis.
+            An open platform for bioimage analysis.
           </span>
 
           {/* headline */}
           <h1 className="mt-7 max-w-3xl text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-            Streaming analysis,
+            Bioimage analysis,
             <br />
             <span className="text-primary">your way.</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-white/60">
-            Arkitekt is the middleman between your data, your tools and your
-            team — turning scattered scripts into shareable, reactive analysis
+            Arkitekt is a middleman between your data, your tools and your
+            team — turning scattered scripts, FIJI scripts, into shareable, reactive analysis
             apps.
           </p>
 
@@ -127,81 +128,46 @@ export default function HomePage() {
         <p className="max-w-5xl text-3xl font-medium leading-snug tracking-tight text-fd-muted-foreground sm:text-4xl">
           Arkitekt is an{' '}
           <span className="text-fd-foreground">open-source platform</span> for{' '}
-          <span className="text-fd-foreground">microscopy</span>, beautifully
-          designed for scientists. Bringing powerful features for your imaging
-          workflows, with the flexibility to fit{' '}
-          <span className="text-fd-foreground">any lab</span>.
+          <span className="text-fd-foreground">bioimages and beyond</span>. It connects your
+          data, analysis tools and team through a single reactive datahub — and
+          adapts to how <span className="text-fd-foreground">your lab</span>{' '}
+          already works.
         </p>
       </section>
 
+      {/* ────────────────────── Ecosystem ──────────────────────── */}
+      <Ecosystem />
+
       {/* ───────────────────────── Bento ──────────────────────── */}
+      <HomeBento />
+
+      {/* ─────────────────────── Orchestration ─────────────────── */}
       <section className="w-full pb-16">
-        <BentoGrid>
-          {/* wide media — drop in a workflow / Orkestrator screenshot */}
-          <BentoCard className="p-2 lg:col-span-2">
-            <ScreenshotSlot
-              label="Drop a hero workflow screenshot here"
-              className="min-h-[20rem]"
-            />
-          </BentoCard>
-
-          {/* loved-by statement + showcase CTA */}
-          <BentoCard className="flex flex-col justify-between gap-8 p-8 sm:p-10">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                A platform labs love.
-              </h2>
-              <p className="mt-4 max-w-md text-fd-muted-foreground">
-                Trusted by imaging facilities and research groups — evolving
-                every day to fit the way your lab actually works.
-              </p>
-            </div>
-            <Button asChild size="lg" className="w-fit rounded-full">
-              <Link href="/showcase">
-                Showcase
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          </BentoCard>
-
-          {/* docs / app screenshot */}
-          <BentoCard glow>
-            <div className="h-full overflow-hidden rounded-2xl bg-[#0a0a0c] p-2">
-              <ScreenshotSlot
-                label="Drop a docs / Orkestrator screenshot here"
-                className="h-full min-h-[18rem] border-white/10 bg-white/5 text-white/60"
-              />
-            </div>
-          </BentoCard>
-
-          {/* customizability + install snippet */}
-          <BentoCard className="flex flex-col justify-between gap-8 p-8 sm:p-10 lg:col-span-2">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Built to fit your lab, not the other way around.
-              </h2>
-              <p className="mt-4 max-w-md text-fd-muted-foreground">
-                Open-source and composable from top to bottom — swap the pieces
-                you need and connect the tools you already use.
-              </p>
-              <p className="mt-3 max-w-md text-fd-muted-foreground">
-                Spin up the whole platform with a single command.
-              </p>
-            </div>
-            <div className="rounded-xl border border-fd-border bg-[#0a0a0c] p-4 font-mono text-sm text-white/90">
-              <div className="flex items-center justify-between gap-3">
-                <span>
-                  <span className="text-fd-primary">pip install</span> arkitekt
-                </span>
-                <Copy className="size-4 shrink-0 text-white/40" />
-              </div>
-              <div className="mt-3 text-white/40">
-                &gt; Connecting to your datahub…
-              </div>
-            </div>
-          </BentoCard>
-        </BentoGrid>
+        <div className="mb-6 max-w-xl">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            One node drives the next
+          </h2>
+          <p className="mt-2 text-fd-muted-foreground">
+            Arkitekt brokers commands and data between machines — one node can
+            steer an instrument, a GPU or a robot sitting on another. Drag to
+            look around.
+          </p>
+        </div>
+        <div className="relative h-[26rem] overflow-hidden rounded-3xl border border-white/10 bg-[#0a0a0c] sm:h-[32rem]">
+          {/* brand glow behind the scene, echoing the hero */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-0"
+          >
+            <div className="absolute -left-16 top-1/3 h-[24rem] w-[24rem] rounded-full bg-primary/20 blur-[120px]" />
+            <div className="absolute -right-10 bottom-0 h-[20rem] w-[20rem] rounded-full bg-primary/10 blur-[110px]" />
+          </div>
+          <RobotScene />
+        </div>
       </section>
+
+      {/* ─────────────────────── Core services ─────────────────── */}
+      <CoreBento />
 
       {/* ──────────────────────── Features ─────────────────────── */}
       <section className="w-full">
@@ -225,11 +191,11 @@ export default function HomePage() {
         {/* closing CTA */}
         <div className="mt-12 flex flex-col items-center gap-4 rounded-2xl border border-fd-border bg-fd-card/50 px-8 py-12 text-center backdrop-blur">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Ready to build better bioimage apps?
+            Get started with Arkitekt
           </h2>
           <p className="max-w-xl text-fd-muted-foreground">
             Install the platform, walk through the tutorial, and connect your
-            first tool in minutes.
+            first tool.
           </p>
           <Button asChild size="lg" className="mt-2 rounded-full">
             <Link href="/docs/introduction/first_steps">

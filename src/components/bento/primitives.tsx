@@ -8,6 +8,11 @@ import { cn } from '@/lib/utils';
  * + soft outer glow makes a cell pop (mirrors the accented cells on the
  * Fumadocs landing page). Screenshots are dropped in via <ScreenshotSlot>,
  * which renders a labelled placeholder until a real `src` is supplied.
+ *
+ * The grid is responsive: one column on phones, two from `sm` up. Rows size to
+ * their content (items in a row still stretch to match each other) so a short
+ * text card is never inflated to a media card's height. Use `sm:col-span-2` on
+ * a card to make it span the full width.
  */
 
 export function BentoGrid({
@@ -18,12 +23,7 @@ export function BentoGrid({
   children: ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        'grid grid-cols-1 gap-4 lg:grid-cols-2 lg:auto-rows-fr',
-        className,
-      )}
-    >
+    <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-2', className)}>
       {children}
     </div>
   );
@@ -93,7 +93,7 @@ export function ScreenshotSlot({
   return (
     <div
       className={cn(
-        'flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-fd-border bg-fd-muted/40 text-fd-muted-foreground',
+        'flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-fd-border bg-fd-muted/40 text-fd-muted-foreground',
         className,
       )}
     >

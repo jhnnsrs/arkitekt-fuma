@@ -2,7 +2,7 @@
 "use client";
 import gql from "graphql-tag";
 import React from "react";
-import { useService } from "../lib/arkitekt/provider";
+import { useService } from "@/lib/arkitekt/provider";
 
 const CREATE_MODEL_ZIP = gql`
   mutation ($data: ModelFile!, $kind: ModelKind!, $name: String!) {

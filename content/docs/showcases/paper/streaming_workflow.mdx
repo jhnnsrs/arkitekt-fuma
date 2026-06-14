@@ -3,10 +3,10 @@ title: Streaming Analysis
 description: A streaming Arkitekt workflow that performs real-time StarDist segmentation on 3D microscopy data as it is being acquired.
 ---
 
-import { DownloadGrid } from "@/components/layout/Button";
-import { DisplayWorkflow } from "@/components/reaktion/DisplayWorkflow";
-import { InstallRepoButton } from "@/components/InstallRepoButton";
-import { UploadModelButton } from "@/components/UploadModelButton";
+import { DownloadGrid } from "@/components/docs";
+import { DisplayWorkflow } from "@/components/arkitekt";
+import { InstallRepoButton } from "@/components/arkitekt";
+import { UploadModelButton } from "@/components/arkitekt";
 
 Biological systems can be highly reactive, and closely monitoring them during long-run acquisitions is necessary for ensuring a stable environment in an ongoing experiment. This can range from just checking that the acquisition is running properly (e.g., no loss of focus or some illumination problem), to monitoring the evolution of live biological samples (e.g., premature cell death). Classically, images are batch-processed once the acquisition is complete, i.e., when all of the data have been fully acquired and stored, leaving no chance for real-time analysis and feedback. In this second workflow, we illustrate how Arkitekt with its ability for streaming analysis (i.e., processing immediately after each acquisition event), enables to display real-time feedback on the running acquisition.
 Here we used Arkitekt to perform real-time quantitative monitoring of soSPIM 21,22 3D microscopy data using the popular StarDist 23 deep-learning segmentation algorithm, while they were being acquired (Fig. 3). A user-defined directory located on the microscope’s computer was monitored for new data, and all the analysis steps were performed remotely on each newly acquired data, in parallel with the acquisition, minimizing the risks of slowing the acquisition down or causing its crash.

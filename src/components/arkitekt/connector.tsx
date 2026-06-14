@@ -6,11 +6,11 @@ import * as Popover from "@radix-ui/react-popover";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { Loader2, LogIn, ServerCog, UserRound } from "lucide-react";
-import { App, Guard } from "../lib/app/App";
-import { discover } from "../lib/arkitekt/fakts/discover";
-import { useMeQuery } from "../lib/lok/api/graphql";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { App, Guard } from "@/lib/app/App";
+import { discover } from "@/lib/arkitekt/fakts/discover";
+import { useMeQuery } from "@/lib/lok/api/graphql";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -18,7 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "./ui/sheet";
+} from "@/components/ui/sheet";
 
 export const NoHerre = () => {
   const fakts = App.useFakts();

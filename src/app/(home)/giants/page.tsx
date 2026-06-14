@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Atom, Heart } from 'lucide-react';
-import { SectionBackground } from '@/components/section-background';
+import { SectionBackground } from '@/components/marketing';
 import { appName } from '@/lib/shared';
 
 export const metadata: Metadata = {

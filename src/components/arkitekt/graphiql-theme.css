@@ -1,0 +1,73 @@
+/* Retint GraphiQL (CodeMirror-based v4) so it blends into the Arkitekt theme
+   instead of GraphiQL's stock pink-on-slate look.
+
+   GraphiQL composes every surface from a handful of HSL-triple custom properties
+   (`hsl(var(--color-primary))` etc). Its dark rules are scoped to
+   `body.graphiql-dark .graphiql-container` — a higher specificity than a plain
+   `.dark .graphiql-container` — so our overrides have to match or beat that:
+   container rules are nested under our own `.arkitekt-graphiql` wrapper, and dark
+   rules are prefixed with `html.dark` so they tie/win against GraphiQL's body
+   scope (and win on source order, since this file is imported last).
+
+   The accent (`--color-primary` / `--color-secondary`) is injected at runtime from
+   the live `--color-fd-primary` brand token (see `useGraphiqlBrandSync` in
+   Graph.tsx), so the explorer tracks the site's dynamic brand hue. The violet
+   triples below are the fallback until that runs / if it can't resolve. */
+
+.arkitekt-graphiql .graphiql-container,
+.graphiql-dialog,
+.graphiql-dialog-overlay,
+.graphiql-tooltip,
+.CodeMirror-info,
+.CodeMirror-lint-tooltip,
+[data-radix-popper-content-wrapper] {
+  --color-primary: var(--ark-gql-primary, 265, 72%, 48%);
+  --color-secondary: var(--ark-gql-secondary, 252, 60%, 58%);
+  --color-tertiary: 188, 78%, 38%;
+  --color-base: 270, 33%, 99%;
+  --color-neutral: 267, 16%, 22%;
+
+  --font-family: inherit;
+  --border-radius-4: 6px;
+  --border-radius-8: 10px;
+  --border-radius-12: 12px;
+}
+
+html.dark .arkitekt-graphiql .graphiql-container,
+html.dark .graphiql-dialog,
+html.dark .graphiql-dialog-overlay,
+html.dark .graphiql-tooltip,
+html.dark .CodeMirror-info,
+html.dark .CodeMirror-lint-tooltip,
+html.dark [data-radix-popper-content-wrapper] {
+  --color-primary: var(--ark-gql-primary, 265, 95%, 76%);
+  --color-secondary: var(--ark-gql-secondary, 252, 90%, 78%);
+  --color-tertiary: 188, 85%, 50%;
+  --color-base: 268, 26%, 11%;
+  --color-neutral: 267, 14%, 88%;
+}
+
+/* Let the explorer sit flush inside our own card chrome, transparent so the page
+   texture/glow behind it reads through the gaps. */
+.arkitekt-graphiql .graphiql-container {
+  height: 100%;
+  background: transparent;
+}
+
+/* The session/editor panels carry the site's glassy card feel rather than a flat
+   opaque slab, so they blend with the grainy UI around them. */
+.arkitekt-graphiql .graphiql-sessions,
+.arkitekt-graphiql .graphiql-editors {
+  background: hsla(var(--color-base), 0.6);
+  backdrop-filter: blur(8px);
+}
+
+/* We supply our own header + service switcher, so hide GraphiQL's wordmark. */
+.arkitekt-graphiql .graphiql-logo {
+  display: none;
+}
+
+/* Soften the divider between the sidebar/editor and the response pane. */
+.arkitekt-graphiql .graphiql-sessions {
+  border-radius: 0;
+}
