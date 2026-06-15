@@ -5,7 +5,12 @@ description: A comparison of Arkitekt and Nextflow, contrasting their execution 
 
 ## Arkitekt vs Nextflow
 
-Nextflow and Arkitekt are very similar tools, and they share a lot of the same concepts. However, there are some key differences between the two tools that are worth noting.
+Let's say it up front: we love Nextflow. It is one of the finest workflow engines
+ever written for science, and Arkitekt is better for having studied it. Nextflow
+and Arkitekt share a lot of the same DNA — streams, reproducibility, running
+tasks across heterogeneous hardware — which is exactly why the *differences* are
+worth understanding. They are not better-or-worse differences; they are
+different design centres, and each tool wins in its own niche.
 
 ### Conceptual differences
 
@@ -14,17 +19,48 @@ task to another task, to make your work reproducible. However, the two tools hav
 
 
 
-### Graphical Workflows vs Nextflow DSL
+### Programming primitives vs a DSL
 
-One of the most obvious differences between Arkitekt and Nextflow is that Arkitekt uses a graphical interface to create workflows, while Nextflow uses a Domain Specific Language
-that is written in a text editor. This is a very important difference, and it is worth noting that both approaches have their own advantages and disadvantages. Importantly this has
-not only implications for the user experience, but also for the way that the workflow is executed. Some concepts of Arkitekt are not easily translated to Nextflow, and vice versa.
+One of the most obvious differences is *how you express your logic*. Nextflow asks
+you to learn a dedicated Domain Specific Language (a Groovy dialect) with its own
+`process`, `channel` and operator semantics. It is a beautifully designed DSL — but
+it is still a language you have to learn, and a boundary you have to cross every
+time your logic outgrows what the DSL expresses comfortably.
+
+Arkitekt takes the opposite bet: **use programming and Python primitives you
+already know**. A node is just a decorated Python function — your type hints become
+its input and output ports, your docstring becomes its description:
+
+```python
+from arkitekt_next import register
+
+@register
+def run_stardist(image: Image) -> Image:
+    """Run StarDist segmentation on a single image."""
+    return segment(image)
+```
+
+There is no separate workflow language to learn. You orchestrate these nodes with
+ordinary Python — loops, conditionals, `async`/`await`, exceptions, your own
+helper functions — because the control flow *is* Python. When your logic gets
+genuinely complex (a branch that depends on a measured value, a retry, a loop that
+runs until convergence), you do not hit a DSL ceiling; you just write the code.
+
+For the *simpler* end of the spectrum — and for collaborators who do not want to
+write code at all — Arkitekt also ships a **graphical Workflow Designer** (in the
+Orkestrator app). The exact same `@register`-ed nodes show up as draggable blocks
+that you wire together visually. So the choice is not "graphical *or* code": simple
+flows can be drawn, complex ones written in Python, and both run on the same engine.
+
+This is a very important difference, with implications not only for user experience
+but also for *how the workflow executes* — some concepts of Arkitekt do not
+translate cleanly to Nextflow, and vice versa.
 
 
 #### Execution model
 
 Nextflow is based on the idea of stateless tasks that are executed in a shell. This means that the tasks are executed in a shell, and once the process is finished, the state is lost.
-This is very different from Arkitekt, where all apps can maintain their state, and are only  able to communicate with other apps through messages (Actor based programming). This has some important implications
+This is very different from Arkitekt, where all apps can maintain their state, and only communicate with other apps through messages (message-passing between stateful agents). This has some important implications
 for the way that a workflow is executed. Let's look at this example:
 
 ```groovy
@@ -98,6 +134,47 @@ one image, and the memory will be freed.
 
 </Callout>
 
+#### The model problem [#the-model-problem]
+
+Nowhere does this difference bite harder than with **deep-learning models**. A
+modern segmentation or restoration model can take *seconds to tens of seconds* to
+import its framework, allocate GPU memory and load its weights. In Nextflow's
+stateless model, every task is a fresh process, so that cold-start cost is paid
+**once per image**. Process ten thousand frames and you pay it ten thousand times.
+There is no clean way around it: the process exits, the model goes with it.
+
+Arkitekt's stateful agents make this a non-issue. The model lives in the app's
+**`@context`** — app-level resources injected into your nodes — and is loaded
+**once** by a `@startup` hook when the agent first connects, then reused for every
+item it processes:
+
+```python
+from arkitekt_next import register, startup, context
+
+@context
+class AppContext:
+    model: object = None
+
+@startup
+async def load(context: AppContext):
+    context.model = load_my_model()  # paid once, at connect time
+
+@register
+def run_inference(image: Image, context: AppContext) -> Image:
+    result = context.model.predict(image.data)  # the warm model, every call
+    return from_array_like(result, name="inference result")
+```
+
+(`@context` is the home for long-lived resources like models and service clients;
+`@state`, by contrast, is for mutable runtime state you want to share and publish
+between nodes — not where a model belongs.)
+
+The agent stays resident and keeps the warm model in GPU memory between
+invocations. For a streaming smart-microscopy loop — where you want the next frame
+analysed *now* — this is the difference between a workflow that feels live and one
+that re-pays its setup cost on every frame. Nextflow simply cannot preload a model
+across tasks, because it has no resident task to preload it into.
+
 This core difference in the execution model of the two tools, has some important implications for the way that workflows are designed. For example, in Nextflow it is very common to use
 for big batch jobs, where you want to process a large number of images, and start up time is not a problem. In Arkitekt, it is more common to use workflows where you want to process single
 fast arriving messages and you want to minimze your time to feedback (as it might be important to get the results of your workflow as fast as possible, e.g in a smart microscopy setting).
@@ -123,6 +200,50 @@ prefer the entirely stateless execution model.
 
 </Callout>
 
+### Parallelism across stateful agents
+
+If agents stay resident and process items one after another, how do you scale out?
+This is where Nextflow's stateless model looks, at first glance, simpler: it just
+fans tasks out across the cluster, each in its own throwaway process.
+
+Arkitekt parallelises *without throwing away state*. The same action can be served
+by many **agents** at once — several on one machine, or spread across machines
+entirely — each holding its own warm model. Arkitekt then **distributes incoming
+items across those agents**, and you choose the *map strategy*:
+
+- **Round-robin** — hand items out evenly across agents, in order.
+- **As completed** — send the next item to whichever agent is free first; maximum
+  throughput, but results may arrive out of order.
+- **Ordered** — keep input order, at the cost of blocking on a slow item.
+
+So you get Nextflow-style horizontal scaling — three segmentor agents chew through
+the stream three times as fast — but each agent still loaded its model only once.
+You are parallelising *warm workers*, not re-paying setup on every shard.
+
+### Action dependencies
+
+A workflow is only useful if the actions it calls are actually available. Nextflow
+resolves this at the process level — each `process` declares its own container or
+conda environment, and the engine materialises it per task.
+
+Arkitekt resolves this through the agents that are connected *right now*. An action
+is runnable whenever at least one **agent** implementing it is online, and Arkitekt
+routes each task to a live agent at assign time. The upshot is a live dependency
+graph:
+
+- A workflow knows, *before it runs*, whether every action it needs has a connected
+  agent — and is flagged as non-runnable if one is missing.
+- If an agent disconnects, any workflow depending on its action reacts immediately,
+  rather than failing halfway through.
+
+<Callout type="info">
+
+Connected agents and the tasks assigned to them are the backbone of how Arkitekt
+schedules work. If you want the full mental model, see
+[Assignation](/docs/design/terminology/assignation).
+
+</Callout>
+
 ### Arkitekt Streams vs Nextflow Channels
 
 On first glance, Arkitekt streams and Nextflow channels are very similar. They both represent a stream of data that can be passed from one task to another, and the connections
@@ -132,6 +253,16 @@ of data forms the conceptual workflow. However, there are some key differences b
 
 #### Nextflow
 
-Nextflow is a tool that is fabolous for reliably running workflows in a variety of different settings, but excels at running workflows on a cluster of machines. An important
+Nextflow is a tool that is fabulous for reliably running workflows in a variety of different settings, but excels at running workflows on a cluster of machines. An important
 feature of Nextflow is that it heavily borrows from the UNIX philosophy of "pipelines" and "streams", and you can easily pipe data from one task to another. In this regard
-Nextflow is very much similar to Arkitekt, that also borrows from this idea of streams.
+Nextflow is very much similar to Arkitekt, which also borrows from this idea of streams.
+
+So when should you pick which? If your work is a large, reproducible batch — process
+ten thousand images overnight on a cluster, where start-up cost is noise — Nextflow
+is a wonderful choice and we will happily point you to it. If your work is *live* —
+a stateful app reacting to fast-arriving data, a model that loads once and stays
+warm, a closed loop where results steer the next acquisition — that is where
+Arkitekt was built to shine. And thanks to the
+[integration strategies](/docs/roadmap/thoughts/nextflow), you rarely have to
+choose: Arkitekt apps can run inside Nextflow workflows, and Nextflow can be
+called from Arkitekt.

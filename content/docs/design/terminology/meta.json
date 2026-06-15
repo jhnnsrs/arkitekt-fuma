@@ -10,8 +10,6 @@
     "template",
     "apps-vs-services",
     "assignation",
-    "port",
-    "provision",
-    "reservation"
+    "port"
   ]
 }

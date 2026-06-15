@@ -148,12 +148,12 @@ friendly solution for this (also for better multi-gpu support).
   <source src="/docs/introduction/advanced/train_care.webm" />
 </video>
 <div className="text-gray-400 mb-2">
-  <small> Reserving and training a CARE Model</small>
+  <small> Training a CARE Model</small>
 </div>
 
 A few notes:
 
-- You know the drill. Search for the `Train CARE` node and `Reserve it` to make it available.
+- You know the drill. Search for the `Train CARE` node and select it to make it available.
 - Navigate back to the `Data tab` and run it directly from your just created `Context`.
 - You will be prompted by the `Assign Dialog`, which will now ask you training parameters. These are specific to CARE, and you can read more about them in the [CARE paper](https://www.nature.com/articles/s41592-018-0216-7).
   We just leave the default parameters for now, but be aware that you can change them to your needs. The default paramters are not optimal for this dataset, but we are just doing this for the purpose of this tutorial.
@@ -193,7 +193,7 @@ and you can always just integrate your favorite deep learning framework into Ark
 ## Using the Model
 
 Your training is going to take time. But at some point it will end, promise! Once it is done you can use the model to make predictions.
-For this we will now reserve the `Predict CARE` node, which in this case will take a `Model` and an `Image` as input and return an image.
+For this we will now use the `Predict CARE` node, which in this case will take a `Model` and an `Image` as input and return an image.
 
 <video
   autoPlay

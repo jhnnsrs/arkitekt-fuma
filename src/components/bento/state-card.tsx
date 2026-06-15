@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bot, Radio } from 'lucide-react';
 import { BentoCard } from './primitives';
-import { RobotScene } from '@/components/marketing';
+import { RobotStateScene } from '@/components/marketing';
 
 // A fake observable robot state. Each tick the agent mutates it and the change
 // is "published" live — this stands in for the real @state instance a dashboard
@@ -92,7 +92,7 @@ export function StateCard() {
         </div>
 
         {/* the Fairino FR5 model */}
-        <RobotScene />
+        <RobotStateScene />
 
         {/* state overlay */}
         <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4">

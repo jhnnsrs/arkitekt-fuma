@@ -1,6 +1,6 @@
 ---
 title: Your first Tool
-description: Learn what Apps, Plugins, and Nodes are in Arkitekt by installing your first plugin app and reserving a node to convert a file.
+description: Learn what Apps, Plugins, and Nodes are in Arkitekt by installing your first plugin app and using a node to convert a file.
 ---
 
 import { InstallRepoButton } from "@/components/arkitekt";
@@ -13,7 +13,7 @@ In this section we will explore:
 - What are Apps
 - What are Plugins
 - Install our first Arkitekt Plugin (A File Converter)
-- Understand Nodes and Reservations
+- Understand Nodes and how to use them
 - Convert a file
 
 ## Apps and Nodes
@@ -147,66 +147,22 @@ and you can also stop the app if you want to. But for now, lets leave it running
 
 ## So how do we use it?
 
-And this is the most important question. How do we use this app? Where are our nodes? Can we just start using it on our data? Well, not quite yet.
-There is one last step that we need to do. We need to tell Arkitekt that we want to use some of the functionality of this app. We do this by `Reserving`
-our desired nodes.
+And this is the most important question. How do we use this app? Here is the good news: you don't have to do
+anything special. Now that the app is deployed and running, every node it provides is **immediately available** —
+just find the node you need and assign your data to it directly.
 
-<Callout type="info" title="About Reservations">
-
-
-Reservations are a core concept of the Arkitekt platform. They represent a contract of use between you and the Arkitekt platform, which will try to provide
-you the reserved `Node`, and inform you if its currently not available, (Maybe because the connected application is not started yet).
-Reservations are always bound to a specific `User` and a specific `Node`, and connect the `Node` to one or multiple real-world implementation(s) (e.g. our plugin app).
-To learn more about reservations, read [Reservations](/docs/design/terminology/reservation).
+<Callout type="info" title="It used to be harder">
 
 
-</Callout>
-
-So lets see how we can reserve a node.
-
-<video
-  autoPlay
-  muted
-  loop
-  controls
-  className="rounded-sm rounded-md"
-  width={"100%"}
->
-  <source src="/docs/introduction/first_steps/reserve.webm" />
-</video>
-
-1. Click the `Dashboard` button in the left hand navigation.
-
-The Dashboard is another core view of the Arkitekt platform. It shows you all of your reservations (i.e. reserved functionality/node) that are currently active on the platform
-(you should see none display right now) and the status of the connected applications (you should now see the omero app being display). It will also show you the status of ongoing tasks
-that you have assigned to the platform.
-
-2. Open the `Search Sidebar` by clicking on the `Search` button in the button left corner.
-
-The search sidebar allows for a platform wide search for functionality (i.e. nodes), irrespective of the applications. You can start typing in the search bar, and it will show you
-all the nodes that match your search. Search for "Convert" and you should see a node called "Convert Omero". This is the node that we want to reserve.
-
-3. Drag and Drop or Right Click on the node and click on "Reserve".
-
-This will open a dialog that will ask you for some information about the reservation. Here you can tell Arkitekt specific requests for your reservation. Do you want to use on
-specific app, do you want to parellize it, do you want to give it a specific name. For now, just leave everything as it is, and click on "Reserve". This will use the "Auto", Scheduler
-and will reserve the node automatically on the first available app.
-
-4. You should now see a new `Reservation` on your dashboard under the "This app uses" section.
-
-Congratulations, you have now reserved your first node. You have told Arkitekt that you want to use the "Convert Omero" node, and Arkitekt will inform you when it is ready to use.
-It should now appear green in your dashboard. If you click on it, you can see some more information about the reservation, and you can also cancel/`unreserve` it if you want to. But
-for now, lets leave it as it is.
-
-<Callout type="info" title="Why Reservations">
-
-
-You might ask yourself, why do we need to reserve nodes? Why can't we just use them? Well, this is a highly involved topic and hopefully we will be able to explain it in more detail in the
-design section of this documentation. In short they help Arkitekt keep track of the dependencies of your function and later our workflows.. For now, just rest assured that you only have to reserve nodes _once_,
-Arkitekt will keep track of them until you tell it otherwise.
+If you used an older version of Arkitekt, you might remember having to _reserve_ a node first — booking it before
+you could use it. We got rid of that entirely. Now an action is simply usable whenever an app (an _agent_) that
+implements it is connected. Isn't this so much easier now?
 
 
 </Callout>
+
+That's really all there is to it. In the next section we'll find the `Convert Omero` node, point our file at it,
+and run the conversion directly.
 
 ## Convert a file
 

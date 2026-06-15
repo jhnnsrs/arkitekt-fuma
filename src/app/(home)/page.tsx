@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoreBento, HomeBento } from '@/components/bento';
-import { Ecosystem, EcosystemOrbit } from '@/components/marketing';
+import { Ecosystem, EcosystemOrbit, NotArkitekt } from '@/components/marketing';
 import { gitConfig } from '@/lib/shared';
 
 const features = [
@@ -140,6 +140,9 @@ export default function HomePage() {
 
       {/* ────────────────────── Ecosystem ──────────────────────── */}
       <Ecosystem />
+
+      {/* ─────────────────── What Arkitekt is not ──────────────── */}
+      <NotArkitekt />
 
       {/* ───────────────────────── Bento ──────────────────────── */}
       <HomeBento />

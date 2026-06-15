@@ -1,6 +1,6 @@
 ---
 title: Help! Orkestrator is not working
-description: Tips for troubleshooting the Orkestrator interface, including unresponsiveness and tool or workflow reservations that are not working.
+description: Tips for troubleshooting the Orkestrator interface, including unresponsiveness and actions or workflows that are unavailable or won't run.
 ---
 
 Orkestrator is not working for you? Here are some tips to help you troubleshoot.
@@ -11,9 +11,10 @@ If Orkestrator is not working, feels slughish and unresponsive, try refreshing t
 bring up the context menu and select `Reload` in the Desktop App. You will be surprised how often this fixes the problem. If reloading does not help,
 try restarting Orkestrator. Sometimes, the app gets stuck in a bad state and needs to be restarted.
 
-## My Tool Reservation is not working
+## An action is unavailable (I can't assign to it)
 
-If you have a reservation for a node that is not working, and you can't assign to the node, here are some tips to help you troubleshoot.
+If a node shows up greyed out, or you can't assign a task to it, it means Arkitekt currently has no connected
+agent that implements that action. Here are some tips to help you troubleshoot.
 
 1. Reload the page:
 
@@ -21,48 +22,46 @@ If you have a reservation for a node that is not working, and you can't assign t
 
 2. Check if the app is offline.
 
-   It might just be that the app is offline, and there is nothing wrong. Can you see it active in the `Active Apps` section in the Dashboard?
-   If its not listed here, it might be offline. Try connecting, restarting the app or the plugin.
+   An action is only available while an app implementing it is connected. Can you see that app active in the
+   `Active Apps` section in the Dashboard? If it's not listed there, it is offline — try connecting, or restarting
+   the app or the plugin.
 
-3. Bounce the linked App:
+3. Bounce the App:
 
-   If it appears it try to give it a little nudge to update its state. Select the `Bounce` Action in the Action Menu of the App. This will briefly disconnect the App and reconnect it.
-   This might fix the problem.
+   If it appears but the action still won't run, give it a little nudge to update its state. Select the `Bounce`
+   action in the Action Menu of the App. This will briefly disconnect the app and reconnect it, which often
+   re-registers its actions.
 
-4. Inspect the Reservation:
+4. Check which agents provide the action:
 
-   Each reservation should be linked to at least on App through a `Provision`. To inspect the linked App click on the Reservation in the
-   Dashboard and then inspect the `Linked Provisions` . Check if at least one of the linked provisions is in the `Active` state.
+   Open the node in the search sidebar and inspect which connected apps implement it. At least one of them needs to
+   be online for the action to be runnable. If none are connected, start the app that provides it.
 
-5. Re-reserve the node:
+5. Delete the Node:
 
-   If the App is working, but the reservation is still not working, or for some reason you have no linked App, try unreserving (ie. deleting) the reservation and
-   reserving the node again. This should fix the problem.
+   If all of this fails you can try to delete the node and re-add it. Just delete the node in its detail view, and
+   restart the app — it should re-register the action and become available again.
 
-6. Delete the Node:
+## My Workflow won't run
 
-   If all of this fails you can try to delete the node and re-add it. Just delete the node in its detail view, and restart the app,
-   it should re-add the node. Re-reserve the node and it should work again.
-
-## My Workflow Reservation is not working
-
-If you have a reservation for a workflow that is not working, and you can't assign to the workflow, here are some tips to help you troubleshoot.
+A workflow can only run when **every action it uses** has at least one connected agent implementing it. If a
+workflow won't start, one of its actions is usually missing a live agent.
 
 1. Reload the page:
 
    Easy first. Try reloading the page. This might fix the problem.
 
-2. Inspect the Reservation:
+2. Find the action without a connected agent:
 
-   Your reservation should be linked to a `Provision` on the `Scheduler` app. Click on that provision and inspect the `Workflow`in the detail view.
-   This will show all the reservations for the workflow. Check if all the reservation are in the `Active` state. If not check that reservation and
-   restart the app. This should fix the problem and update the workflow. If you don't see any change, try to reload the page.
+   Open the workflow and look for any node flagged as unavailable (greyed out). That is the action with no
+   connected agent — start the app that provides it and the workflow becomes runnable again.
 
 3. Check if the Scheduler is offline:
 
-   If you can't see the Scheduler in the `Active Apps` section in the Dashboard, it might be offline. If so, try restarting the app or the plugin.
+   Workflows are run by the `Scheduler` app. If you can't see the Scheduler in the `Active Apps` section in the
+   Dashboard, it might be offline. If so, try restarting the app or the plugin.
 
-4. Re-reserve the workflow:
+4. Restart the providing app:
 
-   If the Scheduler is working, but the reservation is still not working, or for some reason you have no linked Scheduler, try unreserving (ie. deleting) the reservation and
-   reserving the workflow again. This should fix the problem.
+   If an app is connected but its action still won't run, restart that app (or `Bounce` it). This re-registers its
+   actions and should let the workflow run.

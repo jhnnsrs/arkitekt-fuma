@@ -152,7 +152,7 @@ A few notes on this workflow:
    models), without having to change the workflow itself.
 
 1. During the creation of the workflow around (2:25) we see the `Predict Stardist` node being configured. Here we can see that the `Segmentation Model` parameter is set to be a global parameter, and that
-   we are changing the "Reserve Params" to manually point to all three segmentor instances that we started in the previous step. This will send out incoming requests in a round robin manner to the three
+   we are manually pointing the node at all three segmentor instances that we started in the previous step. This will send out incoming requests in a round robin manner to the three
    segmentor instances, and will thus distribute the workload evenly between the three instances. _However_ in the default configuratoin this will not parallelize the segmentation but rather wait for
    the first instance to finish, before sending the next image to the next instance. To enable parallelization, we can go to the "Advanced" tab and set the Map Strategy to "As completed". This will cause
    Arkitekt to _NOT_ wait for the first instance to finish, but send immediately the next image to the next instance. This will cause the three instances to run in parallel, and thus speed up the segmentation
@@ -202,9 +202,9 @@ You can also use the `Create New Stage` node to create a new stage directly from
 
 </Callout>
 
-## Reserving and Running the Workflow
+## Running the Workflow
 
-Reserve the deployed workflow either on the Arkitekt Workflow interface or on the Dashboard and once all of the Applications are started, Arkitekt should guide you
+Open the deployed workflow either on the Arkitekt Workflow interface or on the Dashboard, and once all of the Applications are started, Arkitekt should guide you
 on which applications need to be started. Once all of the applications are started, you can start the workflow, through right-click start on the Workflow. During the
 assignment Arkitekt will ask you for the global Parameters that we set in the workflow.
 

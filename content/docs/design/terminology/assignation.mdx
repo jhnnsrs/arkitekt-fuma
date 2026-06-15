@@ -1,14 +1,14 @@
 ---
 title: Assignation
-description: An Assignation is the process of running a Task in Arkitekt, established through a Reservation and able to stream results over time.
+description: An Assignation is the process of running a Task in Arkitekt, assigned directly to an action and able to stream results over time.
 ---
 
 ### Whats is an Assignation
 
 An Assignation is the process of running a Task in Arkitekt, and happens everytime
-you want to instruct an App to do something with your data.  Importantly task
-assignment in Arkitekt are done not directly but through a "Reservation" which
-is our way of abstracting the concept of "where" and "how" a task should be run.
+you want to instruct an App to do something with your data. You assign a task
+**directly** to a node (an action); Arkitekt then takes care of "where" and "how"
+it runs by routing it to a connected agent that implements that action.
 
 Also an Assignation is an ongoing process, and can be `cancelled` at any time. Cancellation
 is again an integral part of the Arkitekt design (and seperates it from a lot other message
@@ -45,12 +45,11 @@ Just think of Assignation as a way to run a Bioimage Task in Arkitekt.
 When you create a Task in Akriekt you are essential creating a docket, a list of workitems
 that need to be done. Lets say you want to run a task like `segmentation` on a dataset.
 
-You search the node "Segment Cells", you reserve it and you have decided to not care where
-it runs, so you instruct Arkiekt to "auto" reserve it, essentially letting Arkitekt decide
-where to run it. This reservation of the Node is now our entrypoint for all the tasks that
-we want to run in this configuration.
+You search the node "Segment Cells" and simply assign your data to it — you do not care
+where it runs, so Arkitekt decides for you, routing the task to any connected agent that
+implements the action.
 
-When you now are ready to run the task, and you enter the data you want to segment, you
+When you assign the task and enter the data you want to segment, you
 create an Assignation with the parameters of the task. This Assignation is now a "workorder"
 that is being sent through a pipeline of tasks.
 
