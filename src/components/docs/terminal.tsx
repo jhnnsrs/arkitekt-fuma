@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import "asciinema-player/dist/bundle/asciinema-player.css";
+import { asset } from "@/lib/base-path";
 
 type AsciinemaPlayerProps = {
   src: string;
@@ -64,7 +65,7 @@ export const InnerTerminal = ({
 
   useEffect(() => {
     const currentRef = ref.current;
-    const instance = player?.create(src, currentRef, {
+    const instance = player?.create(asset(src), currentRef, {
       autoPlay,
       speed,
       fit,

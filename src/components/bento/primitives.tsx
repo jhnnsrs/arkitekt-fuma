@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { asset } from '@/lib/base-path';
 
 /**
  * Building blocks for the home-page bento grid. Cells come in two flavours:
@@ -108,7 +109,7 @@ export function ScreenshotSlot({
   if (src) {
     return (
       <img
-        src={src}
+        src={asset(src)}
         alt={alt}
         className={cn('h-full w-full object-cover', imgClassName)}
       />

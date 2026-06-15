@@ -11,6 +11,9 @@ const config = {
   serverExternalPackages: ['@takumi-rs/image-response'],
   output: 'export',
   basePath,
+  // Expose the base path to client components so they can prefix raw asset
+  // references (see src/lib/base-path.ts).
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   reactStrictMode: true,
   images: { unoptimized: true },
 };

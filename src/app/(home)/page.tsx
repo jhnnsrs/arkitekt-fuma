@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoreBento, HomeBento } from '@/components/bento';
+import { asset } from '@/lib/base-path';
 import { Ecosystem, EcosystemOrbit, NotArkitekt } from '@/components/marketing';
 import { gitConfig } from '@/lib/shared';
 
@@ -114,7 +115,7 @@ export default function HomePage() {
         <div className="relative z-0 mt-10 px-6 sm:px-12 lg:absolute lg:bottom-0 lg:right-0 lg:mt-0 lg:w-[64%] lg:translate-x-[12%] lg:translate-y-[16%] lg:px-0">
           <div className="overflow-hidden rounded-xl  lg:rounded-none lg:rounded-tl-2xl lg:border-b-0 lg:border-r-0">
             <img
-              src="/img/image.png"
+              src={asset('/img/image.png')}
               alt="The Orkestrator app managing uploaded microscopy data"
               className="w-full"
             />
