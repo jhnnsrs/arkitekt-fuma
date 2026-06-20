@@ -1,0 +1,68 @@
+---
+title: Integrity & Reproducibility
+description: Provenance is only worth keeping if it cannot be quietly forged. Signed, single-use tokens and input hashes make every attribution verifiable and tamper-evident.
+---
+
+# Integrity & Reproducibility
+
+An audit trail that can be edited, replayed, or faked is worse than none at all — it offers the
+*appearance* of trust without the substance. So Arkitekt's provenance is built to be **verifiable**
+and **tamper-evident** end to end. Three mechanisms carry that weight.
+
+## Signed tokens, always verified
+
+Every task is built from a **provenance token** that is cryptographically signed (EdDSA). When a
+request arrives, [authentikate](https://github.com/jhnnsrs/authentikate) verifies that signature
+*before* any change is recorded. Crucially:
+
+- Provenance lives in its **own trust domain**, separate from ordinary request authentication. A
+  token that is valid for talking to a service is not, on its own, a valid claim about who caused
+  what.
+- There is **no static-token bypass** for provenance. Unlike some auth paths that accept a
+  pre-shared token, the provenance signature is *always* checked. There is no "trusted enough to
+  skip verification" shortcut.
+
+The practical consequence: a history row can only ever be written from a request whose provenance
+was signed by a recognized [issuer](/docs/design/architecture/provenance/identity#issuer--the-attestor)
+and verified on the way in. There is no code path that records an unsigned or unattributed change.
+
+## Single-use tokens
+
+Each provenance token carries a unique token id (`jti`), and Arkitekt stores it under a uniqueness
+constraint. That makes the token effectively **single-use**: a captured token cannot be replayed to
+forge a second, independently-attributed task. The first use binds the id; a replay collides with
+the stored record rather than minting a fresh, plausible-looking history.
+
+This is the difference between *"someone holds a token that says this"* and *"this attribution was
+established exactly once, at a known moment"*.
+
+## Input hashes — reproducibility & tamper-evidence
+
+A task also records a hash of the **inputs** it ran with: a SHA-256 of the canonicalized arguments
+(`ahs`), together with the canonicalization algorithm/version used to produce it (`aha`). Recording
+the algorithm alongside the hash matters — it keeps old records verifiable even as the
+canonicalization scheme evolves.
+
+This gives provenance two properties it could not otherwise claim:
+
+- **Reproducibility** — the audit trail does not just say *that* a task ran, it pins down *what it
+  ran on*. Given the same inputs, you can recompute the hash and confirm you are looking at the
+  same computation.
+- **Tamper-evidence** — if the recorded inputs were altered after the fact, the hash would no
+  longer match. The arguments and their fingerprint have to agree.
+
+## The shape of the guarantee
+
+Put together, these mechanisms mean an attribution is not a polite assertion but a checkable one:
+
+> Signed by a known issuer, established exactly once, over inputs whose fingerprint is on record.
+
+That is what lets the [identity model](/docs/design/architecture/provenance/identity) and the
+[causal tree](/docs/design/architecture/provenance/causal-trees) be trusted: every node in the
+tree, and every identity on it, rests on a signature that was verified and cannot be quietly
+replayed or rewritten.
+
+## Next
+
+- [Effective changes & boundaries](/docs/design/architecture/provenance/effective-changes) — what
+  the trail records about each change, and where its guarantees stop.

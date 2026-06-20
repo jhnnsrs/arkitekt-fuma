@@ -1,0 +1,83 @@
+---
+title: Causal Trees
+description: One human action can fan out into many automated tasks, and those tasks into still more. Arkitekt records the whole tree, so every change — however many hops down — traces back to where it began.
+---
+
+# Causal Trees
+
+A single decision rarely stays single. You call one app; that app calls another; an agent kicks
+off a follow-up analysis. Each step may touch data, and each deserves to be attributed honestly.
+Arkitekt models this not as a flat list of events but as a **causal tree** of tasks.
+
+## Grouping: one token, many changes
+
+Start with the simplest case — a single task. When a user calls a registered function on an
+[agent](/docs/design/services/rekuest), the agent receives one server-signed **provenance token**
+for that run. While the function executes, every outgoing operation it makes — every mutation, no
+matter how many — is transparently stamped with that **same** token. The application code does
+nothing special; the token is set once and propagates to everything the function does.
+
+On the server side, the first change under that token creates the task, and every later change
+with the same token reuses it. So every history row produced anywhere in that one run links back
+to a single task, and you can query *"show me everything this run changed"* as one coherent unit.
+
+## Branching: tasks that spawn tasks
+
+Now let the run do more than touch its own data — let it **call another app**. That call is itself
+a new task, with its own token, its own changes. But it did not appear from nowhere: it was caused
+by the first task. Arkitekt records that relationship on every task with two extra references:
+
+| Reference | Meaning | Token claim |
+|-----------|---------|-------------|
+| **Parent assignation** | The task that *directly* caused this one | `ptk` |
+| **Root assignation** | The task at the very top of the whole tree | `rtk` |
+
+The **parent** link lets you walk the tree one hop at a time — who called whom. The **root** link
+is the shortcut that matters most in practice: no matter how deep a change happens, it carries a
+direct pointer to the action that started everything.
+
+```
+          human clicks "run"            ← root assignation
+                   │
+            task A (agent X)             ← parent = (none), root = A
+              ├── changes some data
+              └── calls another app
+                       │
+                task B (agent Y)         ← parent = A, root = A
+                  ├── changes more data
+                  └── calls yet another app
+                           │
+                    task C (agent Z)     ← parent = B, root = A
+                      └── changes data
+```
+
+Every change made in tasks A, B, and C shares the **same root assignation**. The
+[immediate caller](/docs/design/architecture/provenance/identity#immediate-caller--this-hops-trigger)
+differs at each hop — for task C it is agent Y, not the original human — but the
+[root human causer](/docs/design/architecture/provenance/identity#root-human-causer--the-authority)
+is constant all the way down.
+
+## Why it matters
+
+This is what turns provenance from a per-record curiosity into something you can reason about:
+
+- **Trace back** — given any altered record, follow its task's root assignation to the exact human
+  action that ultimately caused it, even across many automated hops.
+- **Scope an investigation** — *"everything that resulted from my one click"* is a single query
+  over the root assignation, not a manual reconstruction.
+- **Revert as a unit** — because a whole branch of work shares a root, the changes it produced can
+  be reasoned about and unwound together.
+
+## Across time
+
+Long-running work makes this even more important. A task can span many separate requests over
+minutes or hours; because a task is keyed by its identity rather than by any single request, all
+of its changes — and all of its children — still collapse onto the same tree. The shape of the
+causal tree survives no matter how the work is spread out in time.
+
+## Next
+
+- [Integrity & reproducibility](/docs/design/architecture/provenance/integrity) — what keeps the
+  links in this tree from being forged.
+- [Effective changes & boundaries](/docs/design/architecture/provenance/effective-changes) — what
+  exactly is recorded at each node.

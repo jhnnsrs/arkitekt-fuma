@@ -1,0 +1,75 @@
+---
+title: The Identity Model
+description: A single change is not the work of one identity but of several — the human authority, the immediate caller, the executing agent, and the issuer. Keeping them distinct is what makes the human-vs-machine line honest.
+---
+
+# The Identity Model
+
+The [Security](/docs/design/architecture/security) page insists on a sharp line between **you**
+and **the machine**, even when the machine acts on your behalf. That line is not a slogan — it is
+a data structure. Every task Arkitekt records carries **four distinct identities**, and the
+platform deliberately refuses to collapse them into a single "user did this".
+
+## Four identities, one change
+
+When a change is recorded under a task, the task answers four different questions:
+
+| Question | Identity | Token claim |
+|----------|----------|-------------|
+| On whose **authority** does this ultimately run? | **Root human causer** | `rcb` |
+| Who triggered **this particular hop**? | **Immediate caller** | `sub` |
+| Which **machine** actually did the work? | **Executing agent** | `act` (`act.sub` + `act.cid`) |
+| Who **vouched** for all of it? | **Issuer** | `iss` |
+
+### Root human causer — the authority
+
+The root human causer is the person at the very root of the causal chain — the human whose
+decision set everything in motion. No matter how many automated hops sit between that decision and
+the final change, the authority is always attributed back to this human. This is the answer to
+*"on whose authority?"*, and it is the identity that never gets to hide behind an agent.
+
+When that human is a known local user, the task resolves to their account; when they are external
+or unknown, the task still records the raw identity rather than silently dropping it (see
+[boundaries](/docs/design/architecture/provenance/effective-changes#the-edges)).
+
+### Immediate caller — this hop's trigger
+
+The immediate caller is whoever triggered *this specific task*. In a simple, one-step action the
+immediate caller and the root human causer are the same person. But once tasks chain — an agent
+calling another agent — the immediate caller of a downstream task is the **upstream agent**, not
+the original human. Keeping this separate from the root causer is what lets you read a chain hop
+by hop without losing track of where ultimate authority lies.
+
+### Executing agent — the machine
+
+The executing agent is the machine that actually performed the work: its user identity (`act.sub`)
+and its OAuth client (`act.cid`). This is the *"by what"* of the audit trail. When an AI agent
+runs a node and writes a result, the executing agent is recorded as the doer — explicitly, and
+never merged into the human who authorized it.
+
+### Issuer — the attestor
+
+The issuer is the authority that minted and signed the provenance token. It is the part of the
+trail that says *"this attribution is vouched for"*, and it underpins the
+[integrity guarantees](/docs/design/architecture/provenance/integrity): an attribution is only as
+trustworthy as the issuer that signed it.
+
+## Why keep them apart?
+
+Because conflating them destroys exactly the trust provenance exists to protect. "A human
+authorized this" and "a machine carried it out" are *both true at once*, and a record that keeps
+only one of those facts is a record that lies by omission. By storing all four identities
+side by side, Arkitekt can always answer, later and with confidence:
+
+> *Agent **X**, triggered by **Y**, did this on the ultimate authority of human **Z**, attested
+> by issuer **W**.*
+
+That sentence is the whole point — and it is only sayable because the four identities were never
+allowed to merge.
+
+## Next
+
+- [Causal trees](/docs/design/architecture/provenance/causal-trees) — how the immediate caller and
+  root causer come apart when one action spawns many tasks.
+- [Integrity & reproducibility](/docs/design/architecture/provenance/integrity) — why the issuer's
+  signature can be trusted.

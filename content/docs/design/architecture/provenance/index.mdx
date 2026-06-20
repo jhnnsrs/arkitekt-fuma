@@ -39,19 +39,9 @@ Every change produces a **provenance entry** that carries:
 | `date`              | When the change happened.                                        |
 | `effectiveChanges`  | The per-field old → new diff for that change.                    |
 
-This is what makes the human-versus-machine distinction concrete. When an agent runs a node on
-your behalf, the entry records both facts at once: that the work was **authorized by you**, and
-that it was **carried out by a machine** — never collapsing one into the other.
-
-## What is a task (assignation)?
-
-A **task** — also called an *assignation* — groups together every change made during one
-logical run. In Arkitekt, when a user calls an app through [Rekuest](/docs/design/services/rekuest),
-all of that app's changes carry the same task identity. So you can later find, audit, or revert
-**every** change a single run produced, as one coherent unit.
-
-Long-running tasks can span many separate requests over time; because a task is keyed by its
-identity rather than by request, all of those changes still collapse onto the same task.
+A change links to a `task`, and that task is where the real depth lives: it records not one
+identity but several, how it relates to other tasks, and enough signed metadata to be verified
+and reproduced later.
 
 ## How it fits together
 
@@ -88,30 +78,21 @@ layer has one job, and provenance is what you get when they are composed in orde
 Because each layer depends on the one above it, the audit trail is only ever written from a
 *verified* request — there is no path that records an unattributed or unsigned change.
 
-## One token, many changes
+## Dig deeper
 
-The reason a task can group many changes is worth spelling out, because it is the heart of *why*
-provenance is trustworthy — and it is not something the audit layer does by force. It falls out
-of how a [rekuest-next](https://github.com/jhnnsrs/rekuest-next) agent runs a task.
+The rest of this section unpacks the parts that make provenance trustworthy rather than merely
+informative:
 
-When a user calls a registered function on an agent, the agent receives a single, server-signed
-**provenance token** for that one run. While the function executes, every outgoing operation it
-makes — every mutation, no matter how many — is transparently stamped with that **same** token.
-The application code does nothing special; the token is set once and propagates to everything the
-function does.
-
-On the server side, the first change under that token creates the task, and every later change
-with the same token reuses it. The result: every history row produced anywhere in that one run
-links back to a single task, and you can later query *"show me everything this run changed."*
-
-## Querying and reverting
-
-Because provenance is recorded as first-class data, it is exposed directly in each service's
-GraphQL API as a queryable, filterable `provenance` field on the records that carry it. You can
-ask a record for its full history, filter records by the task or user that changed them, and —
-for most actions — revert a change to restore the previous state.
+- **[The identity model](/docs/design/architecture/provenance/identity)** — the four distinct
+  identities behind every change, and why Arkitekt refuses to collapse them.
+- **[Causal trees](/docs/design/architecture/provenance/causal-trees)** — how one human action
+  fans out into many automated tasks, and how every one of them traces back.
+- **[Integrity & reproducibility](/docs/design/architecture/provenance/integrity)** — signed,
+  single-use tokens and input hashes that make provenance verifiable and tamper-evident.
+- **[Effective changes & boundaries](/docs/design/architecture/provenance/effective-changes)** —
+  what the recorded diff actually means, and an honest look at the system's edges.
 
 <GithubRepo url="https://github.com/jhnnsrs/koherent" title="Koherent" />
 
-For the concrete API, setup, and integration details, continue to the
+For the concrete API, setup, and integration details, see the
 [Koherent integration guide](/docs/developers/backend/koherent).

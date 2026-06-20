@@ -1,0 +1,75 @@
+---
+title: Effective Changes & Boundaries
+description: What the recorded diff actually means, and an honest look at where the provenance system draws its limits — because a trustworthy audit trail is candid about its own edges.
+---
+
+# Effective Changes & Boundaries
+
+The earlier pages describe what provenance *captures*. This page is about precision and honesty:
+what the recorded change really means, and where the system deliberately draws a line rather than
+record something it cannot stand behind.
+
+## What "effective changes" means
+
+Each provenance entry exposes an `effectiveChanges` field. It is easy to assume this is a raw event
+log, but it is something more useful: the **net, field-level diff of a record against its previous
+state**. For every change it lists, per field, the *old* value and the *new* value.
+
+A few things follow from "effective":
+
+- It is a **diff, not a snapshot** — you see precisely which fields moved and how, not the whole
+  record re-stated each time.
+- It is computed against the **previous recorded version**, so reading a record's history end to
+  end gives you a faithful, step-by-step reconstruction of how it reached its current state.
+- It is resolved **efficiently in bulk**. Asking for the effective changes of many records at once
+  is batched into a constant number of queries rather than one per record, so provenance stays
+  cheap to inspect even across large result sets.
+
+## Querying and reverting
+
+Because provenance is first-class data, it is exposed directly in each service's GraphQL API as a
+queryable, filterable `provenance` field on the records that carry it. You can ask a record for its
+full history, filter records by the task or user that changed them, and — for most actions — use
+the recorded diffs to **revert** a change, restoring the previous state. Reverting leans on the
+same effective-change diffs: knowing the exact old→new transition for each field is what makes a
+faithful undo possible.
+
+## The edges
+
+A trustworthy audit trail is candid about what it does *not* do. Arkitekt's provenance has a few
+deliberate boundaries, and each is a design choice rather than an oversight.
+
+### Organization scoping
+
+Every task belongs to an **organization**. Provenance is recorded within the multi-tenancy boundary
+described on the [Security](/docs/design/architecture/security#user-management--multi-tenancy) page;
+the audit trail never silently crosses from one organization into another.
+
+### Unknown humans keep their identity
+
+When the
+[root human causer](/docs/design/architecture/provenance/identity#root-human-causer--the-authority)
+is not a known local user — an external collaborator, say — the task does **not** resolve to a local
+account. But it does not drop the attribution either: the raw identity is preserved on the record.
+The system would rather record *"caused by this external identity"* than pretend the causer is
+unknown.
+
+### Mutations over websockets are refused
+
+Some transports cannot carry per-operation provenance reliably. On a persistent websocket
+connection, headers are shared across every operation on the socket, so a change made there could
+not be attributed to a specific task with confidence. Rather than record a change it cannot honestly
+attribute, Arkitekt **rejects** mutations on that path. This is the system's core principle made
+operational: when it cannot tell the truth about who did something, it declines to act rather than
+record a comfortable fiction.
+
+## Where this leaves us
+
+Taken together with the [identity model](/docs/design/architecture/provenance/identity), the
+[causal tree](/docs/design/architecture/provenance/causal-trees), and the
+[integrity guarantees](/docs/design/architecture/provenance/integrity), the result is an audit
+trail that is precise about what it records, useful enough to drive real reverts, and — just as
+importantly — honest about the cases it refuses to guess at.
+
+For the concrete API and field-by-field reference, see the
+[Koherent integration guide](/docs/developers/backend/koherent).
