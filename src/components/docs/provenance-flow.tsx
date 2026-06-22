@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Bot, ChevronLeft, ChevronRight, KeyRound, Layers, Network, Pause, Play, ShieldCheck, User } from 'lucide-react';
 import { useInView } from '@/components/marketing/reveal';
 import { Logo } from '@/components/site/logo';
+import { cardStyle, Centered, flow as flowColor, hueDot, iconBox, iconColor, lerp, ptOn, useContainerWidth, wedgePath, type Pt } from '@/components/diagram';
 
 /* A "user story" for the Rekuest provenance token, drawn in the EcosystemOrbit
    visual language (theme-aware `--orbit-*` / `--brand-hue` OKLCH tokens).
@@ -23,37 +24,9 @@ import { Logo } from '@/components/site/logo';
    The diagram is authored in a fixed coordinate space and CSS-scaled to fit; the
    step graph is generated from one declarative run tree (see RUN / buildBeats). */
 
-type Pt = { x: number; y: number };
-
-const rad = (deg: number) => (deg * Math.PI) / 180;
-const ptOn = (cx: number, cy: number, r: number, deg: number): Pt => ({ x: cx + r * Math.sin(rad(deg)), y: cy - r * Math.cos(rad(deg)) });
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-const CTRL = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) var(--brand-hue))';
-const DATA = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) calc(var(--brand-hue) + 150))';
-const TOKEN = 'oklch(var(--orbit-flow-l) 0.15 85)';
-
-const cardStyle = (hue: number, isHot: boolean): CSSProperties => ({
-  borderColor: isHot ? `oklch(var(--orbit-card-border-hot-l) 0.15 ${hue})` : `oklch(var(--orbit-card-border-l) 0.1 ${hue} / 0.55)`,
-  backgroundImage: `linear-gradient(180deg, oklch(var(--orbit-card-l1) var(--orbit-card-c) ${hue}), oklch(var(--orbit-card-l2) var(--orbit-card-c) ${hue}))`,
-  boxShadow: isHot
-    ? `0 0 0 1.5px oklch(var(--orbit-card-border-hot-l) 0.15 ${hue}), 0 0 36px -8px oklch(0.6 0.2 ${hue} / 0.6)`
-    : `0 10px 30px -18px oklch(0.55 0.15 ${hue} / 0.55)`,
-  transform: isHot ? 'scale(1.05)' : 'scale(1)',
-  transition: 'transform .25s ease, box-shadow .25s ease, border-color .25s ease',
-});
-const iconBox = (hue: number | string): CSSProperties => ({
-  borderColor: `oklch(var(--orbit-card-border-l) 0.11 ${hue} / 0.5)`,
-  backgroundColor: `oklch(var(--orbit-card-iconbg-l) 0.08 ${hue} / 0.45)`,
-});
-const iconColor = (hue: number | string) => `oklch(var(--orbit-card-fg-l) 0.16 ${hue})`;
-const hueDot = (hue: number) => `oklch(0.7 0.16 ${hue})`;
-
-function wedgePath(cx: number, cy: number, ri: number, ro: number, a0: number, a1: number) {
-  const large = a1 - a0 > 180 ? 1 : 0;
-  const o0 = ptOn(cx, cy, ro, a0), o1 = ptOn(cx, cy, ro, a1), i1 = ptOn(cx, cy, ri, a1), i0 = ptOn(cx, cy, ri, a0);
-  return [`M${o0.x} ${o0.y}`, `A${ro} ${ro} 0 ${large} 1 ${o1.x} ${o1.y}`, `L${i1.x} ${i1.y}`, `A${ri} ${ri} 0 ${large} 0 ${i0.x} ${i0.y}`, 'Z'].join(' ');
-}
+const CTRL = flowColor('var(--brand-hue)');
+const DATA = flowColor('calc(var(--brand-hue) + 150)');
+const TOKEN = flowColor(85, '0.15');
 
 // ── apps (label / sub / hue only; positions come from the active layout) ─────
 type AppMeta = { label: string; sub: string; hue: number };
@@ -257,8 +230,7 @@ const STACK_BELOW = 760; // px container width under which the figure reflows
 
 export function ProvenanceFlow() {
   const { ref: revealRef, inView } = useInView<HTMLDivElement>(0.15);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [cw, setCw] = useState(0);
+  const { ref: wrapRef, width: cw } = useContainerWidth<HTMLDivElement>();
   const [cur, setCur] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [flow, setFlow] = useState<(Edge & { progress: number }) | null>(null);
@@ -274,14 +246,6 @@ export function ProvenanceFlow() {
     setPlaying(false);
     setCur((i + STEPS.length) % STEPS.length);
   };
-
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => setCw(e.contentRect.width));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!inView) return;
@@ -680,14 +644,6 @@ function TreeBranch({ node, cur }: { node: BuiltTask; cur: number }) {
           <TreeBranch key={c.id} node={c} cur={cur} />
         ))}
       </div>
-    </div>
-  );
-}
-
-function Centered({ x, y, children }: { x: number; y: number; children: ReactNode }) {
-  return (
-    <div className="absolute" style={{ left: x, top: y, transform: 'translate(-50%, -50%)' }}>
-      {children}
     </div>
   );
 }

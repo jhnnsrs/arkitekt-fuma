@@ -1,9 +1,31 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Boxes, Globe, Laptop, Lock, Network, Server, ShieldCheck } from 'lucide-react';
 import { useInView } from '@/components/marketing/reveal';
 import { Logo } from '@/components/site/logo';
+import {
+  Band,
+  bloomStyle,
+  cardGradient,
+  CrossingMarker,
+  crossings,
+  elbow,
+  Enclosure,
+  FirewallLine,
+  flow,
+  HelpDot,
+  iconBox,
+  iconColor,
+  InfoDot,
+  laneY,
+  useMeasuredAnchors,
+  Wire,
+  type Anchor,
+  type Box,
+  type MeasuredGeo,
+  type Pt,
+} from '@/components/diagram';
 
 /* Deployment strategies, in the ProvenanceFlow visual language (theme-aware
    `--orbit-*` / `--brand-hue` OKLCH tokens).
@@ -23,11 +45,9 @@ import { Logo } from '@/components/site/logo';
      • auth  (indigo)  — the auth & discovery handshake (every app needs it).
    The Data / Auth / Both switch isolates one plane. Nothing animates. */
 
-const flow = (hue: number | string) => `oklch(var(--orbit-flow-l) var(--orbit-flow-c) ${hue})`;
 const DATA = flow(150); // workload data — green
 const AUTH = flow('var(--brand-hue)'); // auth & discovery — brand indigo
-const RED = 'oklch(var(--orbit-flow-l) 0.21 28)'; // dropped at the firewall
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const RED = flow(28, '0.21'); // dropped at the firewall
 
 type Plane = 'data' | 'auth';
 type Variant = 'tunnel' | 'blocked';
@@ -217,22 +237,32 @@ export function DeploymentStrategies() {
 }
 
 // ── measured geometry ───────────────────────────────────────────────────────
-type Anchor = { cx: number; cy: number; top: number; bottom: number; left: number; right: number };
-type Box = { x: number; y: number; w: number; h: number };
+// the semantic geometry of *this* diagram, derived from the measured anchors/boxes
 type Geo = { anchors: Record<string, Anchor>; mine?: Box; other?: Box; firewallY: number; serverBottom: number; lanes: number; W: number; H: number };
 
-function laneY(i: number, g: Geo) {
-  return lerp(g.serverBottom + 14, g.firewallY - 12, (i + 1) / (g.lanes + 1));
+// y of an edge's routing lane, between the public servers and the firewall line
+const lane = (e: Edge, g: Geo) => laneY(e.lane ?? 0, g.lanes, g.serverBottom + 14, g.firewallY - 12);
+
+function deriveGeo(m: MeasuredGeo, publicNodes: Node[], lanes: number): Geo {
+  const mine = m.boxes.mine;
+  const other = m.boxes.other;
+  const firewallY = mine?.y ?? other?.y ?? m.H * 0.5;
+  let serverBottom = 0;
+  for (const n of publicNodes) {
+    const an = m.anchors[n.id];
+    if (an) serverBottom = Math.max(serverBottom, an.bottom);
+  }
+  return { anchors: m.anchors, mine, other, firewallY, serverBottom: serverBottom || firewallY * 0.4, lanes, W: m.W, H: m.H };
 }
 
-type Built = { pts: { x: number; y: number }[]; labelPt?: { x: number; y: number }; helpPt?: { x: number; y: number }; infoPt?: { x: number; y: number } };
+type Built = { pts: Pt[]; labelPt?: Pt; helpPt?: Pt; infoPt?: Pt };
 
 function buildEdge(e: Edge, g: Geo): Built | null {
   const a = g.anchors[e.from];
   if (!a) return null;
   const t = e.to ? g.anchors[e.to] : undefined;
   const fw = g.firewallY;
-  let pts: { x: number; y: number }[];
+  let pts: Pt[];
 
   if (e.route === 'sibling') {
     if (!t) return null;
@@ -241,21 +271,17 @@ function buildEdge(e: Edge, g: Geo): Built | null {
   }
   if (e.route === 'inrow') {
     if (!t) return null;
-    const y = fw + 18;
-    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: t.cx, y }, { x: t.cx, y: t.top }];
+    pts = elbow({ x: a.cx, y: a.top }, { x: t.cx, y: t.top }, fw + 18);
   } else if (e.route === 'up') {
     if (!t) return null;
-    const y = laneY(e.lane ?? 0, g);
-    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: t.cx, y }, { x: t.cx, y: t.bottom }];
+    pts = elbow({ x: a.cx, y: a.top }, { x: t.cx, y: t.bottom }, lane(e, g));
   } else if (e.route === 'over') {
     if (!t) return null;
-    const y = laneY(e.lane ?? 0, g);
-    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: t.cx, y }, { x: t.cx, y: t.top }];
+    pts = elbow({ x: a.cx, y: a.top }, { x: t.cx, y: t.top }, lane(e, g));
   } else {
     // blocked — head toward your network, dropped at the firewall
     const tx = g.mine ? g.mine.x + 34 : a.cx;
-    const y = laneY(e.lane ?? 0, g);
-    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: tx, y }, { x: tx, y: fw }];
+    pts = elbow({ x: a.cx, y: a.top }, { x: tx, y: fw }, lane(e, g));
     const last = pts[pts.length - 1];
     return { pts, labelPt: { x: (pts[1].x + pts[2].x) / 2, y: pts[1].y - 7 }, infoPt: { x: last.x + 22, y: last.y - 20 } };
   }
@@ -264,63 +290,16 @@ function buildEdge(e: Edge, g: Geo): Built | null {
   return { pts, labelPt: { x: segMid.x, y: segMid.y - 7 }, helpPt: { x: segMid.x + 34, y: segMid.y + 13 } };
 }
 
-function crossings(pts: { x: number; y: number }[], y: number) {
-  const out: { x: number; y: number }[] = [];
-  for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1];
-    const b = pts[i];
-    if ((a.y - y) * (b.y - y) < 0) out.push({ x: a.x + (b.x - a.x) * ((y - a.y) / (b.y - a.y)), y });
-  }
-  return out;
-}
-
 function Diagram({ s, show, inView }: { s: Strategy; show: Show; inView: boolean }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const mineRef = useRef<HTMLDivElement>(null);
-  const otherRef = useRef<HTMLDivElement>(null);
-  const [geo, setGeo] = useState<Geo | null>(null);
+  const { wrapRef, registerNode, registerBox, geo: measured } = useMeasuredAnchors({ boxes: ['mine', 'other'] });
 
   const publicNodes = s.nodes.filter((n) => !n.net);
   const otherNodes = s.nodes.filter((n) => n.net === 'other');
   const mineNodes = s.nodes.filter((n) => n.net === 'mine');
   const lanes = Math.max(1, ...s.edges.map((e) => (e.lane ?? -1) + 1));
 
-  const measure = useCallback(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const w = wrap.getBoundingClientRect();
-    const anchors: Record<string, Anchor> = {};
-    let serverBottom = 0;
-    for (const n of s.nodes) {
-      const el = nodeRefs.current.get(n.id);
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      anchors[n.id] = { cx: r.left - w.left + r.width / 2, cy: r.top - w.top + r.height / 2, top: r.top - w.top, bottom: r.bottom - w.top, left: r.left - w.left, right: r.right - w.left };
-      if (!n.net) serverBottom = Math.max(serverBottom, r.bottom - w.top);
-    }
-    const boxOf = (el: HTMLDivElement | null): Box | undefined => (el ? { x: el.getBoundingClientRect().left - w.left, y: el.getBoundingClientRect().top - w.top, w: el.offsetWidth, h: el.offsetHeight } : undefined);
-    const mine = boxOf(mineRef.current);
-    const other = boxOf(otherRef.current);
-    const firewallY = mine?.y ?? other?.y ?? w.height * 0.5;
-    setGeo({ anchors, mine, other, firewallY, serverBottom: serverBottom || firewallY * 0.4, lanes, W: w.width, H: w.height });
-  }, [s, lanes]);
-
-  useLayoutEffect(() => {
-    measure();
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(wrap);
-    return () => ro.disconnect();
-  }, [measure]);
-
-  const setNode = (id: string) => (el: HTMLDivElement | null) => {
-    if (el) nodeRefs.current.set(id, el);
-    else nodeRefs.current.delete(id);
-  };
-
-  const bloom: CSSProperties = { opacity: inView ? 1 : 0, transition: 'opacity .3s ease' };
+  const geo = measured ? deriveGeo(measured, publicNodes, lanes) : null;
+  const bloom = bloomStyle(inView);
   const visible = s.edges.filter((e) => show === 'both' || e.plane === show);
 
   return (
@@ -334,37 +313,34 @@ function Diagram({ s, show, inView }: { s: Strategy; show: Show; inView: boolean
           </defs>
 
           {/* network enclosures (drawn behind the transparent flex boxes) */}
-          {geo.mine && <rect x={geo.mine.x} y={geo.mine.y} width={geo.mine.w} height={geo.mine.h} rx="18" fill="var(--color-fd-primary)" fillOpacity="0.05" stroke="var(--color-fd-primary)" strokeOpacity="0.34" strokeWidth="1.5" />}
-          {geo.other && <rect x={geo.other.x} y={geo.other.y} width={geo.other.w} height={geo.other.h} rx="18" fill="var(--color-fd-muted)" fillOpacity="0.4" stroke="var(--color-fd-border)" strokeWidth="1.5" strokeDasharray="5 5" />}
+          {geo.mine && <Enclosure box={geo.mine} tone="mine" />}
+          {geo.other && <Enclosure box={geo.other} tone="other" />}
           {/* the firewall line — both networks hang their top edge off it */}
-          <line x1="6" y1={geo.firewallY} x2={geo.W - 6} y2={geo.firewallY} stroke="var(--color-fd-primary)" strokeOpacity="0.5" strokeWidth="2.5" strokeDasharray="1 9" strokeLinecap="round" />
+          <FirewallLine y={geo.firewallY} x1={6} x2={geo.W - 6} />
 
           {visible.map((e, i) => {
             const b = buildEdge(e, geo);
             if (!b) return null;
             const color = colorOf(e);
-            const points = b.pts.map((p) => `${p.x},${p.y}`).join(' ');
             const dash = e.variant === 'tunnel' ? '10 8' : e.variant === 'blocked' ? '7 6' : e.plane === 'auth' ? '2 7' : undefined;
+            const markerEnd = e.variant === 'blocked' ? undefined : e.plane === 'auth' ? 'url(#dsAuth)' : 'url(#dsData)';
             return (
               <g key={i}>
-                {e.variant === 'tunnel' && <polyline points={points} fill="none" stroke={color} strokeWidth="6" strokeLinejoin="round" strokeLinecap="round" opacity="0.22" style={{ filter: 'blur(4px)' }} />}
-                <polyline
-                  points={points}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={e.plane === 'data' && !e.variant ? 2.6 : 2.2}
-                  strokeDasharray={dash}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  markerEnd={e.variant === 'blocked' ? undefined : e.plane === 'auth' ? 'url(#dsAuth)' : 'url(#dsData)'}
-                  style={{ opacity: 0.95 }}
-                />
+                <Wire pts={b.pts} color={color} dash={dash} width={e.plane === 'data' && !e.variant ? 2.6 : 2.2} markerEnd={markerEnd} glow={e.variant === 'tunnel'} />
                 {e.label && b.labelPt && (
                   <text x={b.labelPt.x} y={b.labelPt.y} fontFamily="var(--font-mono, monospace)" fontSize="10.5" fontWeight="600" textAnchor="middle" style={{ fill: color }}>
                     {e.label}
                   </text>
                 )}
-                {e.help && b.helpPt && <HelpDot x={b.helpPt.x} y={b.helpPt.y} />}
+                {e.help && b.helpPt && (
+                  <HelpDot
+                    x={b.helpPt.x}
+                    y={b.helpPt.y}
+                    href={DISCOVERY_URL}
+                    label="How apps discover the server — read about Service Discovery"
+                    title="Each app runs a discovery handshake with the server — learn more about Service Discovery"
+                  />
+                )}
                 {e.info && b.infoPt && <InfoDot x={b.infoPt.x} y={b.infoPt.y} tip={e.info} />}
               </g>
             );
@@ -377,25 +353,10 @@ function Diagram({ s, show, inView }: { s: Strategy; show: Show; inView: boolean
             const color = colorOf(e);
             if (e.variant === 'blocked') {
               const last = b.pts[b.pts.length - 1];
-              return [
-                <g key={`x${i}`} transform={`translate(${last.x}, ${last.y})`} stroke={RED} strokeWidth="3" strokeLinecap="round">
-                  <line x1="-7" y1="-7" x2="7" y2="7" />
-                  <line x1="-7" y1="7" x2="7" y2="-7" />
-                </g>,
-              ];
+              return [<CrossingMarker key={`x${i}`} x={last.x} y={last.y} color={RED} kind="x" />];
             }
             return crossings(b.pts, geo.firewallY).map((c, j) => (
-              <g key={`m${i}-${j}`} transform={`translate(${c.x}, ${c.y})`}>
-                <rect x="-9" y="-7" width="18" height="14" rx="4" fill="var(--orbit-surface)" stroke={color} strokeWidth="1.8" />
-                {e.variant === 'tunnel' ? (
-                  <>
-                    <rect x="-4.5" y="-1" width="9" height="6.5" rx="1.5" fill={color} />
-                    <path d="M-2.6 -1 V-3.4 a2.6 2.6 0 0 1 5.2 0 V-1" fill="none" stroke={color} strokeWidth="1.4" />
-                  </>
-                ) : (
-                  <circle r="2.6" fill={color} />
-                )}
-              </g>
+              <CrossingMarker key={`m${i}-${j}`} x={c.x} y={c.y} color={color} kind={e.variant === 'tunnel' ? 'lock' : 'open'} />
             ));
           })}
         </svg>
@@ -405,10 +366,10 @@ function Diagram({ s, show, inView }: { s: Strategy; show: Show; inView: boolean
       <div className="relative z-10 flex flex-col" style={bloom}>
         {/* public internet band */}
         <div className="flex min-h-[160px] flex-col gap-2 px-4 pt-2">
-          <BandLabel icon={<Globe className="size-3.5" />}>PUBLIC INTERNET</BandLabel>
+          <Band icon={<Globe className="size-3.5" />}>PUBLIC INTERNET</Band>
           <div className="flex flex-1 items-start justify-center gap-6">
             {publicNodes.length ? (
-              publicNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={setNode(n.id)} />)
+              publicNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={registerNode(n.id)} />)
             ) : (
               <div className="m-auto flex flex-col items-center gap-1 text-center">
                 <span className="flex items-center gap-1.5 rounded-full border border-dashed border-fd-border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-fd-muted-foreground">
@@ -424,24 +385,24 @@ function Diagram({ s, show, inView }: { s: Strategy; show: Show; inView: boolean
         <div className="relative flex min-h-[176px] items-stretch gap-5 px-4 pb-2">
           {/* NAT chip sits on the firewall line (top edge of the ground floor) */}
           <div className="absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2">
-            <span className="flex items-center gap-1.5 rounded-full border border-fd-border bg-[var(--orbit-surface)] px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] text-fd-muted-foreground">
+            <span className="flex items-center gap-1.5 bg-[var(--orbit-surface)] px-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-fd-muted-foreground">
               <Lock className="size-2.5" /> NAT / firewall
             </span>
           </div>
 
           {otherNodes.length > 0 && (
-            <div ref={otherRef} className="relative flex shrink flex-col gap-2 rounded-2xl p-3">
-              <BandLabel icon={<Laptop className="size-3" />} small>ANOTHER NETWORK</BandLabel>
+            <div ref={registerBox('other')} className="relative flex shrink flex-col gap-2 rounded-2xl p-3">
+              <Band icon={<Laptop className="size-3" />} small>ANOTHER NETWORK</Band>
               <div className="flex flex-1 items-center justify-center">
-                {otherNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={setNode(n.id)} />)}
+                {otherNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={registerNode(n.id)} />)}
               </div>
             </div>
           )}
 
-          <div ref={mineRef} className="relative flex grow flex-col gap-2 rounded-2xl p-3">
-            <BandLabel icon={<ShieldCheck className="size-3.5" />}>YOUR LOCAL NETWORK</BandLabel>
+          <div ref={registerBox('mine')} className="relative flex grow flex-col gap-2 rounded-2xl p-3">
+            <Band icon={<ShieldCheck className="size-3.5" />}>YOUR LOCAL NETWORK</Band>
             <div className="flex flex-1 items-center justify-center gap-5">
-              {mineNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={setNode(n.id)} />)}
+              {mineNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={registerNode(n.id)} />)}
             </div>
           </div>
         </div>
@@ -450,52 +411,15 @@ function Diagram({ s, show, inView }: { s: Strategy; show: Show; inView: boolean
   );
 }
 
-function BandLabel({ icon, small, children }: { icon: ReactNode; small?: boolean; children: ReactNode }) {
-  return (
-    <span className={`flex items-center gap-1.5 self-start font-mono font-bold uppercase text-fd-muted-foreground ${small ? 'text-[8.5px] tracking-[0.12em]' : 'text-[10.5px] tracking-[0.18em]'}`}>
-      {icon}
-      {children}
-    </span>
-  );
-}
-
-/** “?” marker linking to Service Discovery (native SVG tooltip on hover). */
-function HelpDot({ x, y }: { x: number; y: number }) {
-  return (
-    <a href={DISCOVERY_URL} style={{ cursor: 'pointer' }} aria-label="How apps discover the server — read about Service Discovery">
-      <title>Each app runs a discovery handshake with the server — learn more about Service Discovery</title>
-      <circle cx={x} cy={y} r="9" fill="color-mix(in oklch, var(--color-fd-primary) 22%, transparent)" stroke="var(--color-fd-primary)" strokeWidth="1.4" />
-      <text x={x} y={y + 3.4} textAnchor="middle" fontFamily="var(--font-mono, monospace)" fontSize="11.5" fontWeight="700" fill="var(--color-fd-primary)">?</text>
-    </a>
-  );
-}
-
-/** A plain “?” marker with a hover tooltip (no link) — for asides like “bring your own VPN”. */
-function InfoDot({ x, y, tip }: { x: number; y: number; tip: string }) {
-  return (
-    <g style={{ cursor: 'help' }} aria-label={tip}>
-      <title>{tip}</title>
-      <circle cx={x} cy={y} r="9" fill="var(--orbit-surface)" stroke="var(--color-fd-muted-foreground)" strokeWidth="1.4" />
-      <text x={x} y={y + 3.4} textAnchor="middle" fontFamily="var(--font-mono, monospace)" fontSize="11.5" fontWeight="700" fill="var(--color-fd-muted-foreground)">?</text>
-    </g>
-  );
-}
-
 function NodeCard({ n, innerRef }: { n: Node; innerRef: (el: HTMLDivElement | null) => void }) {
   const Icon = ICON[n.kind];
   const mine = n.net === 'mine';
   const hue = 'var(--brand-hue)';
   const style: CSSProperties = mine
-    ? {
-        borderColor: `oklch(var(--orbit-card-border-hot-l) 0.12 ${hue})`,
-        borderWidth: 2,
-        backgroundImage: `linear-gradient(180deg, oklch(var(--orbit-card-l1) var(--orbit-card-c) ${hue}), oklch(var(--orbit-card-l2) var(--orbit-card-c) ${hue}))`,
-      }
+    ? { borderColor: `oklch(var(--orbit-card-border-hot-l) 0.12 ${hue})`, borderWidth: 2, backgroundImage: cardGradient(hue) }
     : { borderColor: 'var(--color-fd-border)', borderWidth: 1.5, borderStyle: 'dashed', backgroundColor: 'var(--color-fd-card)' };
-  const iconColor = mine ? `oklch(var(--orbit-card-fg-l) 0.16 ${hue})` : 'var(--color-fd-muted-foreground)';
-  const iconBox: CSSProperties = mine
-    ? { borderColor: `oklch(var(--orbit-card-border-l) 0.11 ${hue} / 0.5)`, backgroundColor: `oklch(var(--orbit-card-iconbg-l) 0.08 ${hue} / 0.45)` }
-    : { borderColor: 'var(--color-fd-border)', backgroundColor: 'var(--color-fd-muted)' };
+  const ic = mine ? iconColor(hue) : 'var(--color-fd-muted-foreground)';
+  const ib: CSSProperties = mine ? iconBox(hue) : { borderColor: 'var(--color-fd-border)', backgroundColor: 'var(--color-fd-muted)' };
 
   // the Arkitekt services carry the mark itself; the coordination server's is muted
   const logo = n.kind === 'central' || n.kind === 'coordinator';
@@ -505,8 +429,8 @@ function NodeCard({ n, innerRef }: { n: Node; innerRef: (el: HTMLDivElement | nu
       {logo ? (
         <Logo className={`size-8 shrink-0 ${n.kind === 'coordinator' ? 'opacity-45 grayscale' : ''}`} />
       ) : (
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl border" style={iconBox}>
-          <Icon className="size-[18px]" style={{ color: iconColor }} />
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl border" style={ib}>
+          <Icon className="size-[18px]" style={{ color: ic }} />
         </span>
       )}
       <div className="min-w-0 leading-tight">

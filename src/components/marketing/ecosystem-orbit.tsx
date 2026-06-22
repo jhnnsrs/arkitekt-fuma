@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   Aperture,
   Bot,
@@ -26,6 +26,7 @@ import {
 import Link from 'next/link';
 import { useInView } from './reveal';
 import { Logo } from '@/components/site/logo';
+import { cardStyle as cardStyleBase, Centered, flow as flowColor, iconBox, iconColor, lerp, ptOn, rad, useScaledViewport, wedgePath } from '@/components/diagram';
 
 /* Authored in a fixed coordinate space and scaled to fit. Two concentric
    circles share the centre: the inner server donut (core services, uncoloured)
@@ -43,10 +44,8 @@ const R_APP = 345;
 const APP_FROM = 310;
 const APP_TO = 230 + 360;
 
-const rad = (deg: number) => (deg * Math.PI) / 180;
-const px = (r: number, deg: number) => CX + r * Math.sin(rad(deg));
-const py = (r: number, deg: number) => CY - r * Math.cos(rad(deg));
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const px = (r: number, deg: number) => ptOn(CX, CY, r, deg).x;
+const py = (r: number, deg: number) => ptOn(CX, CY, r, deg).y;
 
 type Node = {
   label: string;
@@ -91,37 +90,16 @@ const ENTRY = { x: 132, y: CY };
 // Action & data flows are keyed to the brand AND the theme: lightness/chroma
 // come from `--orbit-flow-*` (which flip between light/dark), the hue from the
 // brand — so flows rotate with `--brand-hue` and re-tune per theme.
-const CTRL = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) var(--brand-hue))';
-const AGENT = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) calc(var(--brand-hue) + 30))';
-const DATA = 'oklch(var(--orbit-flow-l) var(--orbit-flow-c) calc(var(--brand-hue) + 150))';
-const appColor = (i: number) => `oklch(var(--orbit-flow-l) 0.17 ${apps[i].hue})`;
+const CTRL = flowColor('var(--brand-hue)');
+const AGENT = flowColor('calc(var(--brand-hue) + 30)');
+const DATA = flowColor('calc(var(--brand-hue) + 150)');
+const appColor = (i: number) => flowColor(apps[i].hue!, '0.17');
 
-// App/node card styling, driven by theme tokens (`--orbit-card-*`).
-const cardStyle = (hue: number | string, isHot: boolean): CSSProperties => ({
-  borderColor: isHot ? `oklch(var(--orbit-card-border-hot-l) 0.15 ${hue})` : `oklch(var(--orbit-card-border-l) 0.1 ${hue} / 0.55)`,
-  backgroundImage: `linear-gradient(180deg, oklch(var(--orbit-card-l1) var(--orbit-card-c) ${hue}), oklch(var(--orbit-card-l2) var(--orbit-card-c) ${hue}))`,
-  boxShadow: isHot
-    ? `0 0 0 1.5px oklch(var(--orbit-card-border-hot-l) 0.15 ${hue}), 0 0 36px -8px oklch(0.6 0.2 ${hue} / 0.6)`
-    : `0 10px 30px -18px oklch(0.55 0.15 ${hue} / 0.55)`,
-  transform: isHot ? 'scale(1.06)' : 'scale(1)',
-  transition: 'transform .25s ease, box-shadow .25s ease, border-color .25s ease',
-});
-const iconBox = (hue: number | string): CSSProperties => ({
-  borderColor: `oklch(var(--orbit-card-border-l) 0.11 ${hue} / 0.5)`,
-  backgroundColor: `oklch(var(--orbit-card-iconbg-l) 0.08 ${hue} / 0.45)`,
-});
-const iconColor = (hue: number | string) => `oklch(var(--orbit-card-fg-l) 0.16 ${hue})`;
+// App/node card styling, driven by theme tokens (`--orbit-card-*`). The hot card
+// scales slightly more here (1.06) than the docs figures' default (1.05).
+const cardStyle = (hue: number | string, isHot: boolean): CSSProperties => cardStyleBase(hue, isHot, 1.06);
 
-function wedge(a0: number, a1: number, ri: number, ro: number) {
-  const large = a1 - a0 > 180 ? 1 : 0;
-  return [
-    `M${px(ro, a0)} ${py(ro, a0)}`,
-    `A${ro} ${ro} 0 ${large} 1 ${px(ro, a1)} ${py(ro, a1)}`,
-    `L${px(ri, a1)} ${py(ri, a1)}`,
-    `A${ri} ${ri} 0 ${large} 0 ${px(ri, a0)} ${py(ri, a0)}`,
-    'Z',
-  ].join(' ');
-}
+const wedge = (a0: number, a1: number, ri: number, ro: number) => wedgePath(CX, CY, ri, ro, a0, a1);
 
 // Selectable "user stories" — real bioimaging tasks a scientist might ask for.
 const STORIES = [
@@ -342,8 +320,7 @@ function writeStoryUrl(story: StoryId, step: number, push: boolean) {
 
 export function EcosystemOrbit() {
   const { ref: revealRef, inView } = useInView<HTMLDivElement>(0.1);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const { wrapRef, scale } = useScaledViewport(BASE_W, 1);
 
   const [flows, setFlows] = useState<Flow[]>([]);
   const [hot, setHot] = useState<Set<string>>(new Set());
@@ -404,14 +381,6 @@ export function EcosystemOrbit() {
     prevStory.current = story;
     writeStoryUrl(story, cur, push);
   }, [story, cur]);
-
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => setScale(entry.contentRect.width / BASE_W));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   // restart the graph at step 0 when the story changes — but keep the user's
   // play/pause choice (once paused into manual mode, stay there).
@@ -930,15 +899,6 @@ function Diagram({ inView, flows, hot, status, userMsg, desc, datum, datumAt, co
         <div className="flex items-center gap-2.5"><span className="size-[15px] rounded-full border-[2.5px] border-primary bg-primary/15" /> Server <span className="text-fd-muted-foreground/60">· services combined</span></div>
         <div className="flex items-center gap-2.5"><span className="h-[10px] w-[15px] rounded border-[1.6px] border-fd-muted-foreground/50" /> Apps <span className="text-fd-muted-foreground/60">· outer layer</span></div>
       </div>
-    </div>
-  );
-}
-
-/** Absolutely position children centred on (x, y) in the base coordinate space. */
-function Centered({ x, y, children }: { x: number; y: number; children: ReactNode }) {
-  return (
-    <div className="absolute" style={{ left: x, top: y, transform: 'translate(-50%, -50%)' }}>
-      {children}
     </div>
   );
 }
