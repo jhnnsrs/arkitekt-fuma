@@ -3,7 +3,7 @@ title: Provenance & Audit Logging
 description: How Arkitekt records who changed what, under whose authority, and during which task — turning every data change into a durable, queryable audit trail.
 ---
 
-import { GithubRepo } from "@/components/docs";
+import { GithubRepo, ProvenanceFlow } from "@/components/docs";
 
 # Provenance & Audit Logging
 
@@ -93,6 +93,8 @@ Because each layer depends on the one above it, the audit trail is only ever wri
 The reason a task can group many changes is worth spelling out, because it is the heart of *why*
 provenance is trustworthy — and it is not something the audit layer does by force. It falls out
 of how a [rekuest-next](https://github.com/jhnnsrs/rekuest-next) agent runs a task.
+
+<ProvenanceFlow />
 
 When a user calls a registered function on an agent, the agent receives a single, server-signed
 **provenance token** for that one run. While the function executes, every outgoing operation it

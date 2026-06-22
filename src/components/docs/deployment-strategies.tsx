@@ -1,385 +1,135 @@
 'use client';
 
-import React from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Boxes, Globe, Laptop, Lock, Network, Server, ShieldCheck } from 'lucide-react';
+import { useInView } from '@/components/marketing/reveal';
+import { Logo } from '@/components/site/logo';
 
-/**
- * DeploymentStrategies
- *
- * Tabbed topology figure (one strategy at a time, active tab persisted in the
- * URL as `?deploy=`). Layout rules that keep it tidy:
- *   • Top band = the public INTERNET only (community server / public servers).
- *   • Ground band = devices & local servers. The "outside app" is a device on
- *     another network, so it sits on the SAME row as the local apps — just to
- *     the left of, and outside, the lab box.
- *   • The lab box is your local network behind NAT (its top + left edges are
- *     the firewall boundary).
- *   • All connectors use orthogonal (right-angle) routing so lines never cross
- *     node boxes; the mesh tunnel is the one dashed exception.
- * Each strategy shows the happy local path and the non-happy path for the
- * outside device.
- */
+/* Deployment strategies, in the ProvenanceFlow visual language (theme-aware
+   `--orbit-*` / `--brand-hue` OKLCH tokens).
 
-const GREEN = '#7FC99B';
-const AMBER = '#E8B96B';
-const PURPLE = '#8B8AF7';
-const RED = '#F2787F';
-const MUTED = 'rgba(255,255,255,0.42)';
-const INDIGO = '#9b9bff';
-const SANS = 'ui-sans-serif, system-ui, -apple-system, sans-serif';
-const DISCOVERY_URL = '/docs/design/architecture/service-discovery';
+   Layout is flexbox: a column of bands — PUBLIC INTERNET on top, then the
+   ground floor holding two side-by-side network boxes (ANOTHER NETWORK and
+   YOUR LOCAL NETWORK). Every box and node card is a flex child that sizes
+   itself; nothing is hand-placed. The only absolutely-positioned layer is the
+   SVG wire overlay, whose edges are routed from the *measured* positions of the
+   node cards — so the diagram and its connectors always agree.
 
-// ── grid ────────────────────────────────────────────────────────────────
-const NW = 190;
-const NH = 80;
-const COL = { OUT: 150, P: 430, Q: 670, R: 910 }; // P,Q,R live inside the lab
-const NET = 96; // internet band — node center y
-const GND = 320; // ground band — node center y
-const NATY = 200; // lab top edge / internet boundary
-const NATX = 300; // lab left edge / outside boundary
-const LABW = 720;
+   One fixed point of view: your app always lives in your local network, and a
+   remote app on another network always wants in. Across the three strategies
+   only server placement changes — and with it which of your two planes crosses
+   the NAT/firewall, and whether the remote app can reach in:
+     • data  (green)   — your workload. Crossing it means your data leaves.
+     • auth  (indigo)  — the auth & discovery handshake (every app needs it).
+   The Data / Auth / Both switch isolates one plane. Nothing animates. */
 
-type Owner = 'you' | 'community' | 'partner' | 'outside';
-type Kind = 'outside' | 'central' | 'coordinator' | 'apps';
+const flow = (hue: number | string) => `oklch(var(--orbit-flow-l) var(--orbit-flow-c) ${hue})`;
+const DATA = flow(150); // workload data — green
+const AUTH = flow('var(--brand-hue)'); // auth & discovery — brand indigo
+const RED = 'oklch(var(--orbit-flow-l) 0.21 28)'; // dropped at the firewall
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-interface Pt {
-  x: number;
-  y: number;
-}
-interface Node {
-  id: string;
-  kind: Kind;
-  cx: number;
-  cy: number;
-  title: string;
-  sub: string;
-  owner: Owner;
-}
-const mk = (id: string, kind: Kind, cx: number, cy: number, title: string, sub: string, owner: Owner): Node => ({ id, kind, cx, cy, title, sub, owner });
-const top = (m: Node): Pt => ({ x: m.cx, y: m.cy - NH / 2 });
-const bottom = (m: Node): Pt => ({ x: m.cx, y: m.cy + NH / 2 });
-const lft = (m: Node): Pt => ({ x: m.cx - NW / 2, y: m.cy });
-const rgt = (m: Node): Pt => ({ x: m.cx + NW / 2, y: m.cy });
+type Plane = 'data' | 'auth';
+type Variant = 'tunnel' | 'blocked';
+type Net = 'mine' | 'other'; // undefined ⇒ lives in the public internet
+type Kind = 'central' | 'coordinator' | 'apps' | 'outside';
+type Route = 'sibling' | 'inrow' | 'up' | 'over' | 'blocked';
 
-type EdgeKind = 'data' | 'control' | 'blocked' | 'tunnel';
-interface Edge {
-  kind: EdgeKind;
-  pts: Pt[];
-  label?: string;
-  lx?: number;
-  ly?: number;
-  anchor?: 'start' | 'middle' | 'end';
-  lock?: Pt;
-  help?: Pt;
-}
-interface Strategy {
-  key: string;
-  title: string;
-  accent: string;
-  readiness: string;
-  story: string;
-  nodes: Node[];
-  edges: Edge[];
-}
+type Node = { id: string; kind: Kind; title: string; sub: string; net?: Net };
+const mk = (id: string, kind: Kind, title: string, sub: string, net?: Net): Node => ({ id, kind, title, sub, net });
 
-// ── strategies ──────────────────────────────────────────────────────────
-// Data plane (green, solid) = workload data, app ↔ central server.
-// Control plane (indigo, dotted) = auth & discovery, via the coordination server.
-function buildPartner(): Strategy {
-  const outside = mk('outside', 'outside', COL.OUT, GND, 'Outside app', 'another network', 'outside');
-  const coord = mk('coord', 'coordinator', 430, NET, 'Coordination server', 'partner · public', 'partner');
-  const central = mk('central', 'central', 700, NET, 'Central server', 'partner · public', 'partner');
-  const apps = mk('apps', 'apps', 565, GND, 'Your apps', 'run anywhere', 'you');
-  return {
-    key: 'partner',
-    title: 'Kommunity partner',
-    accent: AMBER,
-    readiness: 'Demo only',
-    story:
-      'Everything runs on the partner’s public cloud — no NAT to cross, so local apps and an app on another network connect the same easy way. Each app still does auth & discovery (control plane) against the coordination server before its data flows to the central server. The catch is trust, not reachability: your data lives on infrastructure you don’t own.',
-    nodes: [outside, coord, central, apps],
-    edges: [
-      // data: apps → central
-      { kind: 'data', pts: [{ x: 575, y: 280 }, { x: 575, y: 160 }, { x: 700, y: 160 }, { x: 700, y: 136 }], label: 'data', lx: 642, ly: 152, anchor: 'middle' },
-      // auth & discovery: apps → coordination
-      { kind: 'control', pts: [{ x: 555, y: 280 }, { x: 555, y: 182 }, { x: 430, y: 182 }, { x: 430, y: 136 }], label: 'auth & discovery', lx: 470, ly: 174, anchor: 'middle', help: { x: 430, y: 160 } },
-      // data: outside app → central (public, works)
-      { kind: 'data', pts: [{ x: 150, y: 280 }, { x: 150, y: 118 }, { x: 605, y: 118 }, { x: 605, y: 96 }], label: 'connect', lx: 320, ly: 110, anchor: 'middle' },
-    ],
-  };
-}
+type Edge = { from: string; to?: string; plane: Plane; variant?: Variant; route: Route; lane?: number; label?: string; help?: boolean; info?: string };
 
-function buildLocal(): Strategy {
-  const outside = mk('outside', 'outside', COL.OUT, GND, 'Outside app', 'another network', 'outside');
-  const coord = mk('coord', 'coordinator', 550, NET, 'Coordination server', 'Arkitekt-run', 'community');
-  const central = mk('central', 'central', COL.Q, GND, 'Central server', 'in your lab', 'you');
-  const apps = mk('apps', 'apps', COL.P, GND, 'Local apps', 'same network', 'you');
-  return {
-    key: 'local',
-    title: 'Local + coordination',
-    accent: GREEN,
-    readiness: 'Recommended',
-    story:
-      'Local apps do auth & discovery (control plane) via the coordination server, then exchange data directly with the central server. An app on another network can’t reach the server directly — it’s behind NAT, so the direct data attempt is dropped at the firewall. After discovering through the coordination server, it gets in over an encrypted WireGuard mesh tunnel, peer-to-peer.',
-    nodes: [outside, coord, central, apps],
-    edges: [
-      // data: apps → central
-      { kind: 'data', pts: [{ x: 525, y: 320 }, { x: 575, y: 320 }], label: 'data', lx: 550, ly: 312, anchor: 'middle' },
-      // auth & discovery: apps → coordination
-      { kind: 'control', pts: [{ x: 430, y: 280 }, { x: 430, y: 165 }, { x: 520, y: 165 }, { x: 520, y: 136 }], label: 'auth & discovery', lx: 466, ly: 153, anchor: 'middle', help: { x: 548, y: 150 } },
-      // central registers with coordination (control)
-      { kind: 'control', pts: [{ x: 670, y: 280 }, { x: 670, y: 155 }, { x: 585, y: 155 }, { x: 585, y: 136 }], label: 'register', lx: 700, ly: 250, anchor: 'start' },
-      // outside app discovers via coordination (control)
-      { kind: 'control', pts: [{ x: 150, y: 280 }, { x: 150, y: 96 }, { x: 455, y: 96 }], label: 'discover', lx: 300, ly: 88, anchor: 'middle' },
-      // outside app direct data → blocked
-      { kind: 'blocked', pts: [{ x: 245, y: 320 }, { x: 300, y: 320 }], label: 'blocked', lx: 272, ly: 306, anchor: 'middle' },
-      // outside app data via mesh tunnel
-      { kind: 'tunnel', pts: [{ x: 168, y: 360 }, { x: 168, y: 408 }, { x: 670, y: 408 }, { x: 670, y: 360 }], label: 'WireGuard mesh — data', lx: 480, ly: 424, anchor: 'middle', lock: { x: NATX, y: 408 } },
-    ],
-  };
-}
+type Strategy = { key: string; title: string; readiness: string; story: string; nodes: Node[]; edges: Edge[] };
 
-function buildSelfhost(): Strategy {
-  const outside = mk('outside', 'outside', COL.OUT, GND, 'Outside app', 'another network', 'outside');
-  const apps = mk('apps', 'apps', COL.P, GND, 'Local apps', 'same network', 'you');
-  const central = mk('central', 'central', COL.Q, GND, 'Central server', 'in your lab', 'you');
-  const coord = mk('coord', 'coordinator', COL.R, GND, 'Coordination server', 'your own', 'you');
-  return {
-    key: 'selfhost',
-    title: 'Fully self-hosted',
-    accent: PURPLE,
-    readiness: 'Advanced',
-    story:
-      'You run the central server and your own coordination server, both inside your network. Local apps do auth & discovery (control plane) against your coordinator, then exchange data with the central server. By default there is no path in from outside — the firewall drops it and there is no shared broker. That isolation is the point (air-gapped / CI); reaching in is then your problem to solve.',
-    nodes: [outside, apps, central, coord],
-    edges: [
-      // data: apps → central
-      { kind: 'data', pts: [{ x: 525, y: 320 }, { x: 575, y: 320 }], label: 'data', lx: 550, ly: 312, anchor: 'middle' },
-      // auth & discovery: apps → coordination (routed above the row)
-      { kind: 'control', pts: [{ x: 430, y: 280 }, { x: 430, y: 248 }, { x: 910, y: 248 }, { x: 910, y: 280 }], label: 'auth & discovery', lx: 666, ly: 240, anchor: 'middle', help: { x: 748, y: 240 } },
-      // central registers with coordination (control)
-      { kind: 'control', pts: [{ x: 765, y: 320 }, { x: 815, y: 320 }], label: 'register', lx: 790, ly: 312, anchor: 'middle' },
-      // outside app direct data → blocked
-      { kind: 'blocked', pts: [{ x: 245, y: 320 }, { x: 300, y: 320 }], label: 'blocked', lx: 272, ly: 306, anchor: 'middle' },
-    ],
-  };
-}
+const TAILSCALE = 'Air-gapped by default — but you’re of course free to bridge in with your own VPN, e.g. Tailscale or WireGuard.';
 
-const STRATEGIES: Strategy[] = [buildPartner(), buildLocal(), buildSelfhost()];
-
-// ── glyphs ────────────────────────────────────────────────────────────────
-function Glyph({ kind, color }: { kind: Kind; color: string }) {
-  switch (kind) {
-    case 'outside':
-      return (
-        <g stroke={color} fill="none" strokeWidth="2">
-          <rect x="0" y="0" width="28" height="19" rx="3" />
-          <rect x="-5" y="22" width="38" height="3.5" rx="1.75" fill={color} stroke="none" />
-        </g>
-      );
-    case 'central':
-      return (
-        <g stroke={color} strokeWidth="2" fill="none">
-          <rect x="0" y="0" width="26" height="34" rx="4" />
-          <line x1="6" y1="9" x2="20" y2="9" />
-          <line x1="6" y1="17" x2="20" y2="17" />
-          <circle cx="8" cy="26" r="1.7" fill={color} stroke="none" />
-        </g>
-      );
-    case 'coordinator':
-      return (
-        <g stroke={color} fill={color}>
-          <line x1="13" y1="26" x2="0" y2="9" strokeWidth="2" />
-          <line x1="13" y1="26" x2="26" y2="9" strokeWidth="2" />
-          <line x1="0" y1="9" x2="26" y2="9" strokeWidth="2" />
-          <circle cx="13" cy="26" r="4.5" />
-          <circle cx="0" cy="9" r="4" />
-          <circle cx="26" cy="9" r="4" />
-        </g>
-      );
-    case 'apps':
-      return (
-        <g stroke={color} fill="none" strokeWidth="2">
-          <rect x="0" y="8" width="17" height="17" rx="3" />
-          <rect x="11" y="0" width="17" height="17" rx="3" fill="#0d0d15" />
-        </g>
-      );
-  }
-}
-
-const OWNER_LABEL: Record<Owner, string> = {
-  you: 'you',
-  community: 'Arkitekt community',
-  partner: 'partner',
-  outside: 'outside your network',
+// ── the three strategies — node lists + semantic edges (geometry is measured) ──
+const PARTNER: Strategy = {
+  key: 'partner',
+  title: 'Kommunity partner',
+  readiness: 'Demo only',
+  story:
+    'Your app runs in your local network, but the servers live on the partner’s public cloud — so its data and auth calls cross the boundary out to the internet. An app on another network reaches those same public servers just as easily. The catch is trust, not reachability: your data lives on infrastructure you don’t own.',
+  nodes: [
+    mk('coord', 'coordinator', 'Coordination server', 'partner · public'),
+    mk('central', 'central', 'Data-Server','partner · public'),
+    mk('outside', 'outside', 'Remote app', 'another network', 'other'),
+    mk('app', 'apps', 'Your app', 'local network', 'mine'),
+  ],
+  edges: [
+    { from: 'app', to: 'coord', plane: 'auth', route: 'up', lane: 0, label: 'auth & discovery', help: true },
+    { from: 'app', to: 'central', plane: 'data', route: 'up', lane: 1, label: 'data' },
+    { from: 'outside', to: 'coord', plane: 'auth', route: 'up', lane: 2 },
+    { from: 'outside', to: 'central', plane: 'data', route: 'up', lane: 3, label: 'connects' },
+  ],
 };
 
-function NodeBox({ m, accent }: { m: Node; accent: string }) {
-  const isYou = m.owner === 'you';
-  const isOutside = m.kind === 'outside';
-  const stroke = isOutside ? 'rgba(255,255,255,0.5)' : accent;
-  const rx = m.cx - NW / 2;
-  const ry = m.cy - NH / 2;
-  const glyphColor = isOutside ? 'rgba(255,255,255,0.7)' : accent;
-  return (
-    <g>
-      <text x={rx + NW - 2} y={ry - 7} textAnchor="end" fontFamily={SANS} fontSize="9.5" fontWeight="600" fill={isYou ? accent : MUTED}>
-        {OWNER_LABEL[m.owner]}
-      </text>
-      <rect x={rx} y={ry} width={NW} height={NH} rx="14" fill="rgba(15,15,22,0.92)" stroke={stroke} strokeWidth={isYou ? 2 : 1.5} strokeDasharray={isYou || isOutside ? undefined : '6 5'} />
-      <rect x={rx + 16} y={m.cy - 19} width="38" height="38" rx="10" fill={isOutside ? 'rgba(255,255,255,0.08)' : `${accent}26`} />
-      <g transform={`translate(${rx + 21}, ${m.cy - (m.kind === 'central' ? 17 : 13)})`}>
-        <Glyph kind={m.kind} color={glyphColor} />
-      </g>
-      <text x={rx + 64} y={m.cy - 3} fontFamily={SANS} fontSize="12.5" fontWeight="700" fill="rgba(255,255,255,0.92)">
-        {m.title}
-      </text>
-      <text x={rx + 64} y={m.cy + 15} fontFamily={SANS} fontSize="10.5" fill="rgba(255,255,255,0.55)">
-        {m.sub}
-      </text>
-    </g>
-  );
-}
+const LOCAL: Strategy = {
+  key: 'local',
+  title: 'Local + coordination',
+  readiness: 'Recommended',
+  story:
+    'Your app and the central server both sit in your local network, so your workload data never leaves it — only the lightweight auth & discovery handshake crosses the firewall to the Arkitekt-run coordination server. An app on another network can still reach in, over an experimental, encrypted WireGuard mesh tunnel.',
+  nodes: [
+    mk('coord', 'coordinator', 'Coordination server', 'Arkitekt-run'),
+    mk('outside', 'outside', 'Remote app', 'another network', 'other'),
+    mk('app', 'apps', 'Your app', 'local network', 'mine'),
+    mk('central', 'central', 'Data-Server','in your lab', 'mine'),
+  ],
+  edges: [
+    { from: 'app', to: 'central', plane: 'data', route: 'sibling', label: 'data · stays local' },
+    { from: 'app', to: 'coord', plane: 'auth', route: 'up', lane: 0, label: 'auth & discovery', help: true },
+    { from: 'outside', to: 'coord', plane: 'auth', route: 'up', lane: 1 },
+    { from: 'outside', to: 'central', plane: 'data', variant: 'tunnel', route: 'over', lane: 2, label: 'experimental WireGuard' },
+  ],
+};
 
-function pointsStr(pts: Pt[]) {
-  return pts.map((p) => `${p.x},${p.y}`).join(' ');
-}
+const SELFHOST: Strategy = {
+  key: 'selfhost',
+  title: 'Fully self-hosted',
+  readiness: 'Advanced',
+  story:
+    'Everything — your app, the central server, and your own coordination server — runs inside your local network, so neither data nor auth ever crosses the boundary. By the same token there is no way in for an app on another network: the firewall drops it. That isolation is the point (air-gapped / CI).',
+  nodes: [
+    mk('outside', 'outside', 'Remote app', 'another network', 'other'),
+    mk('app', 'apps', 'Your app', 'local network', 'mine'),
+    mk('central', 'central', 'Data-Server','in your lab', 'mine'),
+    mk('coord', 'coordinator', 'Coordination server', 'your own', 'mine'),
+  ],
+  edges: [
+    { from: 'app', to: 'central', plane: 'data', route: 'sibling', label: 'data' },
+    { from: 'app', to: 'coord', plane: 'auth', route: 'inrow', label: 'auth & discovery · in-network', help: true },
+    { from: 'outside', plane: 'auth', variant: 'blocked', route: 'blocked', lane: 0, label: 'no way in', info: TAILSCALE },
+  ],
+};
 
-/** Clickable help marker linking to the Service Discovery page (native SVG tooltip on hover). */
-function HelpDot({ x, y }: { x: number; y: number }) {
-  return (
-    <a href={DISCOVERY_URL} style={{ cursor: 'pointer' }} aria-label="How apps discover the server — read about Service Discovery">
-      <title>Each app runs a discovery handshake with the server — learn more about Service Discovery</title>
-      <circle cx={x} cy={y} r="9" fill="rgba(125,125,234,0.2)" stroke={INDIGO} strokeWidth="1.4" />
-      <text x={x} y={y + 3.4} textAnchor="middle" fontFamily={SANS} fontSize="11.5" fontWeight="700" fill={INDIGO}>
-        ?
-      </text>
-    </a>
-  );
-}
+const STRATEGIES: Strategy[] = [PARTNER, LOCAL, SELFHOST];
 
-function EdgeLine({ e }: { e: Edge }) {
-  const color = e.kind === 'blocked' ? RED : e.kind === 'control' ? INDIGO : GREEN;
-  const last = e.pts[e.pts.length - 1];
-  const label = e.label ? (
-    <text x={e.lx} y={e.ly} fontFamily={SANS} fontSize="10.5" fontWeight="600" textAnchor={e.anchor ?? 'middle'} fill={color}>
-      {e.label}
-    </text>
-  ) : null;
-  const helpDot = e.help ? <HelpDot x={e.help.x} y={e.help.y} /> : null;
-
-  if (e.kind === 'data')
-    return (
-      <g>
-        <polyline points={pointsStr(e.pts)} fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinejoin="round" markerEnd="url(#arrowGreen)" />
-        {label}
-        {helpDot}
-      </g>
-    );
-  if (e.kind === 'control')
-    return (
-      <g>
-        <polyline points={pointsStr(e.pts)} fill="none" stroke={INDIGO} strokeOpacity="0.85" strokeWidth="2" strokeDasharray="2 6" strokeLinejoin="round" markerEnd="url(#arrowIndigo)" />
-        {label}
-        {helpDot}
-      </g>
-    );
-  if (e.kind === 'blocked')
-    return (
-      <g>
-        <polyline points={pointsStr(e.pts)} fill="none" stroke={RED} strokeWidth="2.5" strokeDasharray="7 6" strokeLinecap="round" strokeLinejoin="round" />
-        <g transform={`translate(${last.x}, ${last.y})`} stroke={RED} strokeWidth="3" strokeLinecap="round">
-          <line x1="-7" y1="-7" x2="7" y2="7" />
-          <line x1="-7" y1="7" x2="7" y2="-7" />
-        </g>
-        {label}
-      </g>
-    );
-  // tunnel
-  return (
-    <g>
-      <polyline points={pointsStr(e.pts)} fill="none" stroke={GREEN} strokeWidth="6" strokeLinejoin="round" strokeLinecap="round" opacity="0.35" filter="url(#wgGlow)" />
-      <polyline points={pointsStr(e.pts)} fill="none" stroke={GREEN} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="11 8" />
-      {e.lock && (
-        <g transform={`translate(${e.lock.x}, ${e.lock.y})`}>
-          <circle r="14" fill="#0d0d15" stroke={GREEN} strokeWidth="2" />
-          <rect x="-6" y="-1" width="12" height="9" rx="2" fill={GREEN} />
-          <path d="M-3.5 -1 V-4 a3.5 3.5 0 0 1 7 0 V-1" fill="none" stroke={GREEN} strokeWidth="1.7" />
-        </g>
-      )}
-      {label}
-    </g>
-  );
-}
-
-function Topology({ s }: { s: Strategy }) {
-  return (
-    <svg viewBox="0 0 1040 470" className="h-auto w-full min-w-[760px]" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="wgGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="5" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-          <path d="M0 0 L7 4 L0 8 z" fill={GREEN} />
-        </marker>
-        <marker id="arrowIndigo" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-          <path d="M0 0 L7 4 L0 8 z" fill={INDIGO} />
-        </marker>
-      </defs>
-
-      {/* internet band (top, public only) */}
-      <text x="40" y="40" fontFamily={SANS} fontSize="11" fontWeight="700" letterSpacing="2" fill={MUTED}>
-        INTERNET · PUBLIC
-      </text>
-
-      {/* local network zone behind NAT */}
-      <rect x={NATX} y={NATY} width={LABW} height="240" rx="18" fill="rgba(127,201,155,0.05)" stroke={GREEN} strokeOpacity="0.4" strokeWidth="1.5" />
-      <text x={NATX + 18} y={NATY + 26} fontFamily={SANS} fontSize="11" fontWeight="700" letterSpacing="2" fill="rgba(255,255,255,0.5)">
-        YOUR LAB · LOCAL NETWORK
-      </text>
-
-      {/* NAT tag on the lab's top edge */}
-      <g transform={`translate(${NATX + LABW / 2 - 58}, ${NATY})`}>
-        <rect x="0" y="-11" width="116" height="22" rx="11" fill="#0d0d15" stroke="rgba(255,255,255,0.16)" />
-        <g transform="translate(14,0)" stroke="rgba(255,255,255,0.55)" fill="none" strokeWidth="1.6">
-          <rect x="-1" y="-3.5" width="9" height="7" rx="1.5" fill="rgba(255,255,255,0.55)" stroke="none" />
-          <path d="M1 -3.5 V-6 a2.5 2.5 0 0 1 5 0 V-3.5" />
-        </g>
-        <text x="28" y="4" fontFamily={SANS} fontSize="9" fontWeight="700" letterSpacing="1.5" fill="rgba(255,255,255,0.55)">
-          NAT / FIREWALL
-        </text>
-      </g>
-
-      {/* edges under nodes */}
-      {s.edges.map((e, i) => (
-        <EdgeLine key={i} e={e} />
-      ))}
-      {s.nodes.map((m) => (
-        <NodeBox key={m.id} m={m} accent={s.accent} />
-      ))}
-    </svg>
-  );
-}
+const ICON: Record<Kind, typeof Server> = { central: Server, coordinator: Network, apps: Boxes, outside: Laptop };
+const colorOf = (e: Edge) => (e.variant === 'blocked' ? RED : e.plane === 'data' ? DATA : AUTH);
+const DISCOVERY_URL = '/docs/design/architecture/service-discovery';
 
 const PARAM = 'deploy';
 const DEFAULT = Math.max(0, STRATEGIES.findIndex((s) => s.key === 'local'));
+type Show = 'both' | 'data' | 'auth';
 
 export function DeploymentStrategies() {
-  const [active, setActive] = React.useState(DEFAULT);
+  const { ref, inView } = useInView<HTMLDivElement>(0.15);
+  const [active, setActive] = useState(DEFAULT);
+  const [show, setShow] = useState<Show>('both');
 
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // restore the tab from ?deploy= after mount (keeps SSG markup hydration-safe)
+  useEffect(() => {
     const key = new URLSearchParams(window.location.search).get(PARAM);
-    const idx = STRATEGIES.findIndex((s) => s.key === key);
+    const idx = STRATEGIES.findIndex((x) => x.key === key);
     if (idx >= 0) setActive(idx);
   }, []);
 
-  const select = React.useCallback((idx: number) => {
+  const s = STRATEGIES[active];
+
+  const select = (idx: number) => {
     setActive(idx);
-    if (typeof window === 'undefined') return;
     try {
       const url = new URL(window.location.href);
       url.searchParams.set(PARAM, STRATEGIES[idx].key);
@@ -387,20 +137,18 @@ export function DeploymentStrategies() {
     } catch {
       /* ignore */
     }
-  }, []);
-
-  const s = STRATEGIES[active];
+  };
 
   return (
     <figure className="not-prose my-8">
-      <div
-        className="rounded-3xl p-4 sm:p-6"
-        style={{
-          background: 'radial-gradient(120% 120% at 50% 0%, #14141f 0%, #08080c 70%)',
-          border: '1px solid rgba(255,255,255,0.08)',
-        }}
-      >
-        <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Deployment strategies">
+      <div ref={ref} className="relative isolate overflow-hidden rounded-3xl border border-fd-border bg-[var(--orbit-surface)] text-fd-foreground">
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute left-1/2 top-[8%] h-[22rem] w-[32rem] -translate-x-1/2 rounded-full bg-primary/10 blur-[140px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,var(--orbit-grid)_1px,transparent_0)] [background-size:36px_36px]" />
+        </div>
+
+        {/* strategy tabs — part of the card, divided by the same border */}
+        <div role="tablist" aria-label="Deployment strategies" className="flex border-b border-fd-border">
           {STRATEGIES.map((st, i) => {
             const on = i === active;
             return (
@@ -409,48 +157,362 @@ export function DeploymentStrategies() {
                 role="tab"
                 aria-selected={on}
                 onClick={() => select(i)}
-                className="flex items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors"
-                style={{
-                  border: `1.5px solid ${on ? st.accent : 'rgba(255,255,255,0.12)'}`,
-                  background: on ? `${st.accent}1f` : 'transparent',
-                  color: on ? '#fff' : 'rgba(255,255,255,0.6)',
-                }}
+                className={`-mb-px flex-1 border-b-2 px-3 py-3 text-[13.5px] font-semibold transition-colors ${
+                  on ? 'border-primary text-fd-foreground' : 'border-transparent text-fd-muted-foreground hover:text-fd-foreground'
+                }`}
               >
-                <span className="size-2.5 rounded-full" style={{ background: st.accent }} />
                 {st.title}
-                <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ background: `${st.accent}22`, color: st.accent }}>
-                  {st.readiness}
-                </span>
               </button>
             );
           })}
         </div>
 
-        <div className="overflow-x-auto">
-          <Topology s={s} />
-        </div>
+        <div className="px-3 pb-5 pt-4 sm:px-6">
+          {/* plane switch + readiness */}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-fd-muted-foreground">{s.readiness}</span>
+            <div className="inline-flex rounded-lg border border-fd-border p-0.5 text-[12px]" role="group" aria-label="Which plane to show">
+              {(['both', 'data', 'auth'] as Show[]).map((opt) => {
+                const on = show === opt;
+                const tint = opt === 'data' ? DATA : opt === 'auth' ? AUTH : undefined;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => setShow(opt)}
+                    aria-pressed={on}
+                    className="flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium capitalize transition-colors"
+                    style={{ background: on ? 'var(--color-fd-muted)' : 'transparent', color: on ? 'var(--color-fd-foreground)' : 'var(--color-fd-muted-foreground)' }}
+                  >
+                    {tint && <span className="size-2 rounded-full" style={{ background: tint }} />}
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        <p className="mx-auto mt-4 max-w-3xl text-center text-[13px] leading-relaxed text-white/65">{s.story}</p>
+          <div className="overflow-x-auto">
+            <Diagram s={s} show={show} inView={inView} />
+          </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-white/50">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-0 w-6 border-t-[3px] border-solid" style={{ borderColor: GREEN }} /> data plane (workload)
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-0 w-6 border-t-2 border-dotted" style={{ borderColor: INDIGO }} /> control plane · auth &amp; discovery
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-0 w-6 border-t-[3px] border-dashed" style={{ borderColor: RED }} /> blocked (non-happy path)
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-0 w-6 border-t-[3px] border-dashed" style={{ borderColor: GREEN }} /> WireGuard mesh tunnel (data)
-          </span>
+          <p key={s.key + show} className="animate-pop-in mx-auto mt-3 max-w-2xl text-center text-[14px] leading-relaxed text-fd-foreground/85">
+            {s.story}
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[11px] text-fd-muted-foreground">
+            <span className="flex items-center gap-2"><span className="h-1.5 w-5 rounded-full" style={{ background: DATA }} /> data · your workload</span>
+            <span className="flex items-center gap-2"><span className="h-0 w-5 border-t-2 border-dotted" style={{ borderColor: AUTH }} /> auth &amp; discovery</span>
+            <span className="flex items-center gap-2"><span className="h-0 w-5 border-t-2 border-dashed" style={{ borderColor: DATA }} /> WireGuard mesh · experimental</span>
+            <span className="flex items-center gap-2"><span className="h-0 w-5 border-t-2 border-dashed" style={{ borderColor: RED }} /> blocked at the firewall</span>
+          </div>
         </div>
       </div>
       <figcaption className="mt-3 text-center text-sm text-fd-muted-foreground">
-        Pick a strategy. The top band is the public internet; your lab sits behind NAT. The outside
-        app is a device on another network — watch what reaches it and what doesn’t.
+        <strong>Your app always stays in your local network.</strong> What changes between strategies
+        is where the servers live — and therefore which of your connections cross the NAT/firewall
+        boundary, and whether an app on another network can reach in at all.
       </figcaption>
     </figure>
+  );
+}
+
+// ── measured geometry ───────────────────────────────────────────────────────
+type Anchor = { cx: number; cy: number; top: number; bottom: number; left: number; right: number };
+type Box = { x: number; y: number; w: number; h: number };
+type Geo = { anchors: Record<string, Anchor>; mine?: Box; other?: Box; firewallY: number; serverBottom: number; lanes: number; W: number; H: number };
+
+function laneY(i: number, g: Geo) {
+  return lerp(g.serverBottom + 14, g.firewallY - 12, (i + 1) / (g.lanes + 1));
+}
+
+type Built = { pts: { x: number; y: number }[]; labelPt?: { x: number; y: number }; helpPt?: { x: number; y: number }; infoPt?: { x: number; y: number } };
+
+function buildEdge(e: Edge, g: Geo): Built | null {
+  const a = g.anchors[e.from];
+  if (!a) return null;
+  const t = e.to ? g.anchors[e.to] : undefined;
+  const fw = g.firewallY;
+  let pts: { x: number; y: number }[];
+
+  if (e.route === 'sibling') {
+    if (!t) return null;
+    pts = [{ x: a.right, y: a.cy }, { x: t.left, y: t.cy }];
+    return { pts, labelPt: { x: (a.right + t.left) / 2, y: a.cy - 10 } };
+  }
+  if (e.route === 'inrow') {
+    if (!t) return null;
+    const y = fw + 18;
+    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: t.cx, y }, { x: t.cx, y: t.top }];
+  } else if (e.route === 'up') {
+    if (!t) return null;
+    const y = laneY(e.lane ?? 0, g);
+    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: t.cx, y }, { x: t.cx, y: t.bottom }];
+  } else if (e.route === 'over') {
+    if (!t) return null;
+    const y = laneY(e.lane ?? 0, g);
+    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: t.cx, y }, { x: t.cx, y: t.top }];
+  } else {
+    // blocked — head toward your network, dropped at the firewall
+    const tx = g.mine ? g.mine.x + 34 : a.cx;
+    const y = laneY(e.lane ?? 0, g);
+    pts = [{ x: a.cx, y: a.top }, { x: a.cx, y }, { x: tx, y }, { x: tx, y: fw }];
+    const last = pts[pts.length - 1];
+    return { pts, labelPt: { x: (pts[1].x + pts[2].x) / 2, y: pts[1].y - 7 }, infoPt: { x: last.x + 22, y: last.y - 20 } };
+  }
+
+  const segMid = { x: (pts[1].x + pts[2].x) / 2, y: pts[1].y };
+  return { pts, labelPt: { x: segMid.x, y: segMid.y - 7 }, helpPt: { x: segMid.x + 34, y: segMid.y + 13 } };
+}
+
+function crossings(pts: { x: number; y: number }[], y: number) {
+  const out: { x: number; y: number }[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    if ((a.y - y) * (b.y - y) < 0) out.push({ x: a.x + (b.x - a.x) * ((y - a.y) / (b.y - a.y)), y });
+  }
+  return out;
+}
+
+function Diagram({ s, show, inView }: { s: Strategy; show: Show; inView: boolean }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const mineRef = useRef<HTMLDivElement>(null);
+  const otherRef = useRef<HTMLDivElement>(null);
+  const [geo, setGeo] = useState<Geo | null>(null);
+
+  const publicNodes = s.nodes.filter((n) => !n.net);
+  const otherNodes = s.nodes.filter((n) => n.net === 'other');
+  const mineNodes = s.nodes.filter((n) => n.net === 'mine');
+  const lanes = Math.max(1, ...s.edges.map((e) => (e.lane ?? -1) + 1));
+
+  const measure = useCallback(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const w = wrap.getBoundingClientRect();
+    const anchors: Record<string, Anchor> = {};
+    let serverBottom = 0;
+    for (const n of s.nodes) {
+      const el = nodeRefs.current.get(n.id);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      anchors[n.id] = { cx: r.left - w.left + r.width / 2, cy: r.top - w.top + r.height / 2, top: r.top - w.top, bottom: r.bottom - w.top, left: r.left - w.left, right: r.right - w.left };
+      if (!n.net) serverBottom = Math.max(serverBottom, r.bottom - w.top);
+    }
+    const boxOf = (el: HTMLDivElement | null): Box | undefined => (el ? { x: el.getBoundingClientRect().left - w.left, y: el.getBoundingClientRect().top - w.top, w: el.offsetWidth, h: el.offsetHeight } : undefined);
+    const mine = boxOf(mineRef.current);
+    const other = boxOf(otherRef.current);
+    const firewallY = mine?.y ?? other?.y ?? w.height * 0.5;
+    setGeo({ anchors, mine, other, firewallY, serverBottom: serverBottom || firewallY * 0.4, lanes, W: w.width, H: w.height });
+  }, [s, lanes]);
+
+  useLayoutEffect(() => {
+    measure();
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  const setNode = (id: string) => (el: HTMLDivElement | null) => {
+    if (el) nodeRefs.current.set(id, el);
+    else nodeRefs.current.delete(id);
+  };
+
+  const bloom: CSSProperties = { opacity: inView ? 1 : 0, transition: 'opacity .3s ease' };
+  const visible = s.edges.filter((e) => show === 'both' || e.plane === show);
+
+  return (
+    <div ref={wrapRef} className="relative mx-auto min-w-[700px] max-w-[880px]">
+      {/* wire overlay — the only absolutely-positioned layer */}
+      {geo && (
+        <svg className="absolute inset-0 z-0 h-full w-full" viewBox={`0 0 ${geo.W} ${geo.H}`} preserveAspectRatio="none" fill="none" aria-hidden style={bloom}>
+          <defs>
+            <marker id="dsData" markerWidth="6" markerHeight="6" refX="4.4" refY="3" orient="auto"><path d="M0 0 L5 3 L0 6 z" fill={DATA} /></marker>
+            <marker id="dsAuth" markerWidth="6" markerHeight="6" refX="4.4" refY="3" orient="auto"><path d="M0 0 L5 3 L0 6 z" fill={AUTH} /></marker>
+          </defs>
+
+          {/* network enclosures (drawn behind the transparent flex boxes) */}
+          {geo.mine && <rect x={geo.mine.x} y={geo.mine.y} width={geo.mine.w} height={geo.mine.h} rx="18" fill="var(--color-fd-primary)" fillOpacity="0.05" stroke="var(--color-fd-primary)" strokeOpacity="0.34" strokeWidth="1.5" />}
+          {geo.other && <rect x={geo.other.x} y={geo.other.y} width={geo.other.w} height={geo.other.h} rx="18" fill="var(--color-fd-muted)" fillOpacity="0.4" stroke="var(--color-fd-border)" strokeWidth="1.5" strokeDasharray="5 5" />}
+          {/* the firewall line — both networks hang their top edge off it */}
+          <line x1="6" y1={geo.firewallY} x2={geo.W - 6} y2={geo.firewallY} stroke="var(--color-fd-primary)" strokeOpacity="0.5" strokeWidth="2.5" strokeDasharray="1 9" strokeLinecap="round" />
+
+          {visible.map((e, i) => {
+            const b = buildEdge(e, geo);
+            if (!b) return null;
+            const color = colorOf(e);
+            const points = b.pts.map((p) => `${p.x},${p.y}`).join(' ');
+            const dash = e.variant === 'tunnel' ? '10 8' : e.variant === 'blocked' ? '7 6' : e.plane === 'auth' ? '2 7' : undefined;
+            return (
+              <g key={i}>
+                {e.variant === 'tunnel' && <polyline points={points} fill="none" stroke={color} strokeWidth="6" strokeLinejoin="round" strokeLinecap="round" opacity="0.22" style={{ filter: 'blur(4px)' }} />}
+                <polyline
+                  points={points}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={e.plane === 'data' && !e.variant ? 2.6 : 2.2}
+                  strokeDasharray={dash}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  markerEnd={e.variant === 'blocked' ? undefined : e.plane === 'auth' ? 'url(#dsAuth)' : 'url(#dsData)'}
+                  style={{ opacity: 0.95 }}
+                />
+                {e.label && b.labelPt && (
+                  <text x={b.labelPt.x} y={b.labelPt.y} fontFamily="var(--font-mono, monospace)" fontSize="10.5" fontWeight="600" textAnchor="middle" style={{ fill: color }}>
+                    {e.label}
+                  </text>
+                )}
+                {e.help && b.helpPt && <HelpDot x={b.helpPt.x} y={b.helpPt.y} />}
+                {e.info && b.infoPt && <InfoDot x={b.infoPt.x} y={b.infoPt.y} tip={e.info} />}
+              </g>
+            );
+          })}
+
+          {/* firewall markers: open port for an allowed crossing, lock for a tunnel, X for blocked */}
+          {visible.flatMap((e, i) => {
+            const b = buildEdge(e, geo);
+            if (!b) return [];
+            const color = colorOf(e);
+            if (e.variant === 'blocked') {
+              const last = b.pts[b.pts.length - 1];
+              return [
+                <g key={`x${i}`} transform={`translate(${last.x}, ${last.y})`} stroke={RED} strokeWidth="3" strokeLinecap="round">
+                  <line x1="-7" y1="-7" x2="7" y2="7" />
+                  <line x1="-7" y1="7" x2="7" y2="-7" />
+                </g>,
+              ];
+            }
+            return crossings(b.pts, geo.firewallY).map((c, j) => (
+              <g key={`m${i}-${j}`} transform={`translate(${c.x}, ${c.y})`}>
+                <rect x="-9" y="-7" width="18" height="14" rx="4" fill="var(--orbit-surface)" stroke={color} strokeWidth="1.8" />
+                {e.variant === 'tunnel' ? (
+                  <>
+                    <rect x="-4.5" y="-1" width="9" height="6.5" rx="1.5" fill={color} />
+                    <path d="M-2.6 -1 V-3.4 a2.6 2.6 0 0 1 5.2 0 V-1" fill="none" stroke={color} strokeWidth="1.4" />
+                  </>
+                ) : (
+                  <circle r="2.6" fill={color} />
+                )}
+              </g>
+            ));
+          })}
+        </svg>
+      )}
+
+      {/* the flex layout */}
+      <div className="relative z-10 flex flex-col" style={bloom}>
+        {/* public internet band */}
+        <div className="flex min-h-[160px] flex-col gap-2 px-4 pt-2">
+          <BandLabel icon={<Globe className="size-3.5" />}>PUBLIC INTERNET</BandLabel>
+          <div className="flex flex-1 items-start justify-center gap-6">
+            {publicNodes.length ? (
+              publicNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={setNode(n.id)} />)
+            ) : (
+              <div className="m-auto flex flex-col items-center gap-1 text-center">
+                <span className="flex items-center gap-1.5 rounded-full border border-dashed border-fd-border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-fd-muted-foreground">
+                  <Globe className="size-3" /> fully air-gapped
+                </span>
+                <span className="font-mono text-[10px] text-fd-muted-foreground/80">nothing of yours reaches the public internet</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ground floor — two networks side by side, behind the NAT/firewall */}
+        <div className="relative flex min-h-[176px] items-stretch gap-5 px-4 pb-2">
+          {/* NAT chip sits on the firewall line (top edge of the ground floor) */}
+          <div className="absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2">
+            <span className="flex items-center gap-1.5 rounded-full border border-fd-border bg-[var(--orbit-surface)] px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] text-fd-muted-foreground">
+              <Lock className="size-2.5" /> NAT / firewall
+            </span>
+          </div>
+
+          {otherNodes.length > 0 && (
+            <div ref={otherRef} className="relative flex shrink flex-col gap-2 rounded-2xl p-3">
+              <BandLabel icon={<Laptop className="size-3" />} small>ANOTHER NETWORK</BandLabel>
+              <div className="flex flex-1 items-center justify-center">
+                {otherNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={setNode(n.id)} />)}
+              </div>
+            </div>
+          )}
+
+          <div ref={mineRef} className="relative flex grow flex-col gap-2 rounded-2xl p-3">
+            <BandLabel icon={<ShieldCheck className="size-3.5" />}>YOUR LOCAL NETWORK</BandLabel>
+            <div className="flex flex-1 items-center justify-center gap-5">
+              {mineNodes.map((n) => <NodeCard key={n.id} n={n} innerRef={setNode(n.id)} />)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BandLabel({ icon, small, children }: { icon: ReactNode; small?: boolean; children: ReactNode }) {
+  return (
+    <span className={`flex items-center gap-1.5 self-start font-mono font-bold uppercase text-fd-muted-foreground ${small ? 'text-[8.5px] tracking-[0.12em]' : 'text-[10.5px] tracking-[0.18em]'}`}>
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+/** “?” marker linking to Service Discovery (native SVG tooltip on hover). */
+function HelpDot({ x, y }: { x: number; y: number }) {
+  return (
+    <a href={DISCOVERY_URL} style={{ cursor: 'pointer' }} aria-label="How apps discover the server — read about Service Discovery">
+      <title>Each app runs a discovery handshake with the server — learn more about Service Discovery</title>
+      <circle cx={x} cy={y} r="9" fill="color-mix(in oklch, var(--color-fd-primary) 22%, transparent)" stroke="var(--color-fd-primary)" strokeWidth="1.4" />
+      <text x={x} y={y + 3.4} textAnchor="middle" fontFamily="var(--font-mono, monospace)" fontSize="11.5" fontWeight="700" fill="var(--color-fd-primary)">?</text>
+    </a>
+  );
+}
+
+/** A plain “?” marker with a hover tooltip (no link) — for asides like “bring your own VPN”. */
+function InfoDot({ x, y, tip }: { x: number; y: number; tip: string }) {
+  return (
+    <g style={{ cursor: 'help' }} aria-label={tip}>
+      <title>{tip}</title>
+      <circle cx={x} cy={y} r="9" fill="var(--orbit-surface)" stroke="var(--color-fd-muted-foreground)" strokeWidth="1.4" />
+      <text x={x} y={y + 3.4} textAnchor="middle" fontFamily="var(--font-mono, monospace)" fontSize="11.5" fontWeight="700" fill="var(--color-fd-muted-foreground)">?</text>
+    </g>
+  );
+}
+
+function NodeCard({ n, innerRef }: { n: Node; innerRef: (el: HTMLDivElement | null) => void }) {
+  const Icon = ICON[n.kind];
+  const mine = n.net === 'mine';
+  const hue = 'var(--brand-hue)';
+  const style: CSSProperties = mine
+    ? {
+        borderColor: `oklch(var(--orbit-card-border-hot-l) 0.12 ${hue})`,
+        borderWidth: 2,
+        backgroundImage: `linear-gradient(180deg, oklch(var(--orbit-card-l1) var(--orbit-card-c) ${hue}), oklch(var(--orbit-card-l2) var(--orbit-card-c) ${hue}))`,
+      }
+    : { borderColor: 'var(--color-fd-border)', borderWidth: 1.5, borderStyle: 'dashed', backgroundColor: 'var(--color-fd-card)' };
+  const iconColor = mine ? `oklch(var(--orbit-card-fg-l) 0.16 ${hue})` : 'var(--color-fd-muted-foreground)';
+  const iconBox: CSSProperties = mine
+    ? { borderColor: `oklch(var(--orbit-card-border-l) 0.11 ${hue} / 0.5)`, backgroundColor: `oklch(var(--orbit-card-iconbg-l) 0.08 ${hue} / 0.45)` }
+    : { borderColor: 'var(--color-fd-border)', backgroundColor: 'var(--color-fd-muted)' };
+
+  // the Arkitekt services carry the mark itself; the coordination server's is muted
+  const logo = n.kind === 'central' || n.kind === 'coordinator';
+
+  return (
+    <div ref={innerRef} className="flex w-[150px] shrink-0 items-center gap-2.5 rounded-2xl border px-3 py-2.5" style={style}>
+      {logo ? (
+        <Logo className={`size-8 shrink-0 ${n.kind === 'coordinator' ? 'opacity-45 grayscale' : ''}`} />
+      ) : (
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl border" style={iconBox}>
+          <Icon className="size-[18px]" style={{ color: iconColor }} />
+        </span>
+      )}
+      <div className="min-w-0 leading-tight">
+        <div className="truncate text-[13px] font-bold tracking-tight text-fd-foreground">{n.title}</div>
+        <div className="mt-0.5 truncate font-mono text-[10px] text-fd-muted-foreground">{n.sub}</div>
+      </div>
+    </div>
   );
 }
