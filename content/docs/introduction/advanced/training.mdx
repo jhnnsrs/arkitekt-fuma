@@ -38,8 +38,8 @@ and we are doing this only for the purpose of this tutorial. Training, Testing, 
 ## Training with Arkitekt
 
 With Arkitekt we wanted to make it easy to train deep learning models, but also to give developers the flexibility to adapt their full training process to their needs. This is why
-we have a very simple conceptional understanding of training, which is that training a deep learning model is simply a `Node` that returns a `Model` that in a second step can be used to
-make predictions (in a `Prediction Node`). This means that training a model is as simple as running a `Node` that returns a `Model`. The developer can then decide how to train the model, and to save it in
+we have a very simple conceptional understanding of training, which is that training a deep learning model is simply an `Action` that returns a `Model` that in a second step can be used to
+make predictions (in a `Prediction Action`). This means that training a model is as simple as running an `Action` that returns a `Model`. The developer can then decide how to train the model, and to save it in
 a way that makes sense for their use case. Importantly with Arkitekt we didn't want to limit the developer to speicifc models like image-to-image, or classifications, but to give them the flexibility to
 interact with every datatype and model type. But with great power comes great responsibility, this is why we have developed `Contexts`
 
@@ -83,12 +83,12 @@ which you can download [here](/demos/nGFP_high_snr.tif) and [here](/demos/nGFP_l
 This steps should seem [familiar](/docs/introduction/first-steps/interface), just a few notes:
 
 - We are batch uploading the data by selecting both files and `multi-dropping` them on the webinterface
-- Then we are batch converting the data through the `Convert Omero` node, which will convert the data to the `Image` datatype.
+- Then we are batch converting the data through the `Convert Omero` action, which will convert the data to the `Image` datatype.
 - We now have two `Image` datatypes in our project, which we can see in the `Data` tab.
 
 ### Creating a Context
 
-Now that we have our data, we can create a `Context` that relates the two `Image` datatypes. To do this we could either use the `Create Context` button, or have a `Node` that returns a `Context` datatype, and
+Now that we have our data, we can create a `Context` that relates the two `Image` datatypes. To do this we could either use the `Create Context` button, or have an `Action` that returns a `Context` datatype, and
 creates this `Context` for us. However we can of course do this also directly on the `Data` tab, using the similar pattern of drag-and-drop.
 
 <video
@@ -124,8 +124,8 @@ For this we will need the `KARE` app, which is just `CARE` but enabled as an Ark
 
 Make sure to appify and deploy the plugin.
 
-This app provides only two nodes `Predict CARE` and `Train CARE`, which allow you to train and predict CARE models, with your data. The Train CARE node will take a `Context` as input, and will return a `Model` as output.
-and the `Predict CARE` node will take a `Model` and an `Image` as input and will return a `Predicted Image` as output. Nodes all the way down. Lets see how we can train a CARE model.
+This app provides only two actions `Predict CARE` and `Train CARE`, which allow you to train and predict CARE models, with your data. The Train CARE action will take a `Context` as input, and will return a `Model` as output.
+and the `Predict CARE` action will take a `Model` and an `Image` as input and will return a `Predicted Image` as output. Actions all the way down. Lets see how we can train a CARE model.
 
 <Callout type="info">
 
@@ -153,11 +153,11 @@ friendly solution for this (also for better multi-gpu support).
 
 A few notes:
 
-- You know the drill. Search for the `Train CARE` node and select it to make it available.
+- You know the drill. Search for the `Train CARE` action and select it to make it available.
 - Navigate back to the `Data tab` and run it directly from your just created `Context`.
 - You will be prompted by the `Assign Dialog`, which will now ask you training parameters. These are specific to CARE, and you can read more about them in the [CARE paper](https://www.nature.com/articles/s41592-018-0216-7).
   We just leave the default parameters for now, but be aware that you can change them to your needs. The default paramters are not optimal for this dataset, but we are just doing this for the purpose of this tutorial.
-- Once you submit the dialog, the training will start. You can see the progress in the `Dashboard` tab, and you will see the `Train CARE` node turning green once the training is done.
+- Once you submit the dialog, the training will start. You can see the progress in the `Dashboard` tab, and you will see the `Train CARE` action turning green once the training is done.
   You can also monitor the progress right there. Looking at the progress bar.
 
 ### Inspecting the Model
@@ -193,7 +193,7 @@ and you can always just integrate your favorite deep learning framework into Ark
 ## Using the Model
 
 Your training is going to take time. But at some point it will end, promise! Once it is done you can use the model to make predictions.
-For this we will now use the `Predict CARE` node, which in this case will take a `Model` and an `Image` as input and return an image.
+For this we will now use the `Predict CARE` action, which in this case will take a `Model` and an `Image` as input and return an image.
 
 <video
   autoPlay
@@ -215,7 +215,7 @@ Also of course you can download the model and share it with others, just like we
 ## The developers perspective
 
 If you are a developer and you want to know how to integrate your own deep learning app into Arkitekt, you can read our Developer Tutorial on how to do this [here](/docs/developers/python).
-But also please just find here **ALL** the code for the `Train CARE` and `Predict CARE` nodes, which are just a few lines of code, and should be easy to understand.
+But also please just find here **ALL** the code for the `Train CARE` and `Predict CARE` actions, which are just a few lines of code, and should be easy to understand.
 
 ```python
 from arkitekt import register

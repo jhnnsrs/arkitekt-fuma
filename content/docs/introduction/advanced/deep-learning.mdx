@@ -74,13 +74,13 @@ For the rest of this tutorial we will assume that you have installed the `segmen
 ### Testing the plugin
 
 Once the plugin is installed you can easily test it out by running it on images that are stored on your arkitekt image. For this tutorial we will be using a pretrained model, that is already included in the plugin.
-You can run the prediction on your image by utilizing the `Segment Fluo2` node.
+You can run the prediction on your image by utilizing the `Segment Fluo2` action.
 
 ## Integrate with ImageJ
 
 Now that we have tested our plugin, we would like to integrate it with our favourite bioimage analysis app. In this case we will be using Fiji through MikroJ, but you can use any other app that is supported by Arkitekt.
-For this we will be using two nodes provided by Fiji, the `Upload Image` node and the `Show Image` node. The `Upload Image` node will take the image from Fiji and upload it to the Arkitekt server,
-where it will be processed by the `Segment Fluo2` node of the `segmentor` plugin. The result will then be piped back to Fiji, where it will be shown using the `Show Image` node.
+For this we will be using two actions provided by Fiji, the `Upload Image` action and the `Show Image` action. The `Upload Image` action will take the image from Fiji and upload it to the Arkitekt server,
+where it will be processed by the `Segment Fluo2` action of the `segmentor` plugin. The result will then be piped back to Fiji, where it will be shown using the `Show Image` action.
 
 <DisplayWorkflow />
 <div className="text-gray-400 mb-2">
@@ -112,7 +112,7 @@ Once it is deployed, you can run the workflow directly from the `Dashboard` of O
 
 ## Integrate with Napari
 
-Now that we have seen how to integrate with ImageJ, let's try to do the same with Napari. Its quite similar to the ImageJ integration, but this time we will be using the `Upload Layer` node and the `Show on Napari` node provided by Napari.
+Now that we have seen how to integrate with ImageJ, let's try to do the same with Napari. Its quite similar to the ImageJ integration, but this time we will be using the `Upload Layer` action and the `Show on Napari` action provided by Napari.
 
 <DisplayWorkflow />
 <div className="text-gray-400 mb-2">
@@ -123,13 +123,13 @@ Now that we have seen how to integrate with ImageJ, let's try to do the same wit
   </small>
 </div>
 
-Import, deploy and run, just like you did with the ImageJ workflow. Its the same workflow, just with different nodes.
+Import, deploy and run, just like you did with the ImageJ workflow. Its the same workflow, just with different actions.
 
 <Callout type="info" title="On universal Workflows">
 
 
 You might have noticed that the workflow, is similar to the one we created for ImageJ, but not the same. We could have created a universal workflow, that would work for both ImageJ and Napari, by
-utilizing the `Upload Image` node and the `Show Image` node, and before deployment let the user choose which app he wants to use. This will be thematized in a later tutorial.
+utilizing the `Upload Image` action and the `Show Image` action, and before deployment let the user choose which app he wants to use. This will be thematized in a later tutorial.
 
 </Callout>
 

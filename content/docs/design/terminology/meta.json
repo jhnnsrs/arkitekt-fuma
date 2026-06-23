@@ -3,12 +3,12 @@
   "pages": [
     "app",
     "manifest",
-    "node",
+    "action",
     "scheduler",
     "structure",
-    "template",
+    "implementation",
     "apps-vs-services",
-    "assignation",
+    "task",
     "port"
   ]
 }

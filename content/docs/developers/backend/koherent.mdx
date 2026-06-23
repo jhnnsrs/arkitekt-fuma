@@ -11,7 +11,7 @@ Koherent adds **provenance-aware audit logging** to Django services that expose 
 [Strawberry](https://strawberry.rocks/) GraphQL API. It is a thin layer over
 [django-simple-history](https://django-simple-history.readthedocs.io/): every change to a
 tracked model is recorded as a history row, and each row is attributed to *who* changed it,
-*which client/app* they used, and the verified **task** (assignation) it happened under.
+*which client/app* they used, and the verified **task** it happened under.
 
 It exposes those answers directly in your GraphQL schema as a queryable, filterable `provenance`
 field.
@@ -62,7 +62,7 @@ them and turns an authenticated, context-carrying request into a durable, querya
 
 <Callout type="info">
 Koherent is built for the Arkitekt / Rekuest ecosystem. The "task" it tracks is a Rekuest
-assignation, attested by a signed provenance token.
+task, attested by a signed provenance token.
 </Callout>
 
 ## Model setup
@@ -138,7 +138,7 @@ query {
       kind
       date
       user { sub }
-      task { assignationId agentClientId }
+      task { taskId agentClientId }
       effectiveChanges { field oldValue newValue }
     }
   }
@@ -155,11 +155,11 @@ constant number of queries.
 
 ```graphql
 query {
-  myModels(filters: { provenance: { assignationId: "task-a", kind: CREATE } }) { id }
+  myModels(filters: { provenance: { taskId: "task-a", kind: CREATE } }) { id }
 }
 ```
 
-Available predicates: `assignationId`, `agentClientId`, `issuer`, `changedBy` (user sub),
+Available predicates: `taskId`, `agentClientId`, `issuer`, `changedBy` (user sub),
 `kind`, `changedSince`, and `changedBefore`.
 
 ## Interaction with `authentikate`
@@ -202,7 +202,7 @@ from koherent import get_current_provenance, get_current_task
 from koherent.strawberry import (
     KoherentExtension,
     ProvenanceEntry,        # the history-row GraphQL type
-    Task,                   # the assignation GraphQL type
+    Task,                   # the task GraphQL type
     ProvenanceFilter,       # the flat provenance filter
     ProvenanceFilterMixin,  # drop-in mixin adding a `provenance` filter
 )

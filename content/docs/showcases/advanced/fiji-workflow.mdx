@@ -36,11 +36,11 @@ scheduling of the workflow tasks is done locally within your app. This is what w
 ## The how
 
 So how does this work? Well, its actually not that different from the standard workflow setting. As Arkitekt workflows are just blueprints,
-that are schedule by an app, we can just instruct the scheduling app to schedule tasks on nodes that are locally available, directly in memory, instead of
-requesting Arkitekt to schedule the tasks for us. This enables us to assing tasks to nodes that are locally available, with minimal/zero latency and only
+that are schedule by an app, we can just instruct the scheduling app to schedule tasks on actions that are locally available, directly in memory, instead of
+requesting Arkitekt to schedule the tasks for us. This enables us to assing tasks to actions that are locally available, with minimal/zero latency and only
 resort to Arkitekt when we need to call functionality that is not available locally. But what about the data? First, all data that is send from app to app
-needs to still be stored centrally on the Arkitekt server, so that apps can easily interchange and share data. However, as Node can define arbitary Inputs and Outputs,
-we can define Inputs and Outputs that are not stored centrally, but that are kept local to the node. These Input and output Structures are termed **locally scoped**, which means
+needs to still be stored centrally on the Arkitekt server, so that apps can easily interchange and share data. However, as an Action can define arbitary Inputs and Outputs,
+we can define Inputs and Outputs that are not stored centrally, but that are kept local to the action. These Input and output Structures are termed **locally scoped**, which means
 that Arkitekt will make sure that you can only wire up nodes that have the same local scope, in the workflow. To now perform a single or series of workflow task locally, we can just convert
 the data that is stored centrally to a locally scoped data structure (a tasks done by a "BRIDGE" node), send it to a node that has locally scoped inputs and then consequentlly
 convert the locally scoped output back to a centrally stored (global scoped) data structure (again done by a "BRIDGE" node).

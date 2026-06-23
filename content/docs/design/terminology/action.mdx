@@ -1,56 +1,56 @@
 ---
-title: What is a Node?
-description: Nodes are a core conceptual element of Arkitekt that represent a bioimage task by its inputs and outputs, independent of any implementation.
+title: What is an Action?
+description: Actions are a core conceptual element of Arkitekt that represent a bioimage task by its inputs and outputs, independent of any implementation.
 ---
 
-## What is a node?
+## What is an action?
 
-Nodes are a core conceptual element of the arkitekt platform, that represent the
-functionality that Arkitekt can do for you. As such you can think of a node as a provider of a bioimage task.
+Actions are a core conceptual element of the arkitekt platform, that represent the
+functionality that Arkitekt can do for you. As such you can think of an action as a provider of a bioimage task.
 
-E.g. a node can be a functionality provided by an app that maximum projects an image, or applies a gaussian filter
-to an image, but also a functionality that will ask you the user to select a file, or label an image. A node can
+E.g. an action can be a functionality provided by an app that maximum projects an image, or applies a gaussian filter
+to an image, but also a functionality that will ask you the user to select a file, or label an image. An action can
 therefore be anything that you can envision as a task.
 
 ## Input and Output
 
-Nodes in Arkitekt are defined by their input and output. This means that a node can be a simple as a node that
-takes an image as an input and outputs an image, or more complex as a node that two images and some information
+Actions in Arkitekt are defined by their input and output. This means that an action can be a simple as an action that
+takes an image as an input and outputs an image, or more complex as an action that two images and some information
 about the images as an input and outputs a table of results.
 
-## What is a node not?
+## What is an action not?
 
-The most important feature to understand about Arkitekt nodes is that they are not bound to an implementation.
+The most important feature to understand about Arkitekt actions is that they are not bound to an implementation.
 
 <div className="mt-2">
-<img src="/docs/design/terminology/node-template.png" alt="Arkitekts nodes and templates" />
+<img src="/docs/design/terminology/node-template.png" alt="Arkitekt's actions and implementations" />
 
 <div className="text-gray-400 mb-2">
-<small>Arkitekts nodes and templates</small>
+<small>Arkitekt's actions and implementations</small>
 </div>
 </div>
 
-This means that a node can be implemented in many different ways **AND**, by various different apps.
-For example, here the show Node is implemented by the Fiji app, but also by the Napari app. These apps
-can implement the same node in different ways, as long as they respect the input and output and the general
-logic of the node. As nodes are the primary way to interact with the platform, this means that you can
-rest assured that the node will behave the same way, no matter which app implements it, but also that
+This means that an action can be implemented in many different ways **AND**, by various different apps.
+For example, here the show Action is implemented by the Fiji app, but also by the Napari app. These apps
+can implement the same action in different ways, as long as they respect the input and output and the general
+logic of the action. As actions are the primary way to interact with the platform, this means that you can
+rest assured that the action will behave the same way, no matter which app implements it, but also that
 you can choose the app that you like the most.
 
 <Callout type="info">
 
 Also this abstraction, comes with some additional benefits for the application developer as they can use this
-abstraction to automatically test their app against the node specification. More about this in the developer
-sections. As apps templates are the primary way to interact with the platform, this means that even though part
+abstraction to automatically test their app against the action specification. More about this in the developer
+sections. As apps implementations are the primary way to interact with the platform, this means that even though part
 of their code can change each version, but users can still interface with the app in the same way, until the developer
-decides to change the input and output of the node.
+decides to change the input and output of the action.
 
 </Callout>
 
-## Node can establish Streams
+## Action can establish Streams
 
-Another important feature to understand about Arkitekt nodes is how they process data. This section will only
-make sense if you have read the Workflow section, but it is important to understand how nodes can establish
+Another important feature to understand about Arkitekt actions is how they process data. This section will only
+make sense if you have read the Workflow section, but it is important to understand how actions can establish
 streams of data.
 
 ## Programming Analogy
@@ -60,11 +60,11 @@ are familiar with the core concepts of function and generators in programming, t
 analogy in Arkitekt.
 
 <div className="mt-2">
-<img src="/docs/design/terminology/node-stream.png" alt="Arkitekts nodes and templates" />
+<img src="/docs/design/terminology/node-stream.png" alt="Arkitekt's actions and implementations" />
 
 <div className="text-gray-400 mb-2">
-<small>Arkitekts nodes and templates</small>
+<small>Arkitekt's actions and implementations</small>
 </div>
 </div>
 
-Nodes are best explained in interplay with explaining it with a Template
+Actions are best explained in interplay with explaining it with an Implementation

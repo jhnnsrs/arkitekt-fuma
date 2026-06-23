@@ -34,18 +34,18 @@ Every change produces a **provenance entry** that carries:
 |---------------------|------------------------------------------------------------------|
 | `user`              | The human user the change is attributed to.                      |
 | `client`            | The app / OAuth client that made the change, if any.             |
-| `task`              | The verified task (assignation) the change ran under, if any.    |
+| `task`              | The verified task the change ran under, if any.                  |
 | `kind`              | `CREATE`, `UPDATE`, or `DELETE`.                                 |
 | `date`              | When the change happened.                                        |
 | `effectiveChanges`  | The per-field old → new diff for that change.                    |
 
-This is what makes the human-versus-machine distinction concrete. When an agent runs a node on
+This is what makes the human-versus-machine distinction concrete. When an agent runs an action on
 your behalf, the entry records both facts at once: that the work was **authorized by you**, and
 that it was **carried out by a machine** — never collapsing one into the other.
 
-## What is a task (assignation)?
+## What is a task?
 
-A **task** — also called an *assignation* — groups together every change made during one
+A **task** groups together every change made during one
 logical run. In Arkitekt, when a user calls an app through [Rekuest](/docs/design/services/rekuest),
 all of that app's changes carry the same task identity. So you can later find, audit, or revert
 **every** change a single run produced, as one coherent unit.

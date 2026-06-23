@@ -110,7 +110,7 @@ that the connection is active and listening for requests / red means recordings.
 
 #### Visualizing your data in Napari
 
-To visualize your data in Napari, you can simply search for the `Show on Napari` node and run it directly from the image pane,
+To visualize your data in Napari, you can simply search for the `Show on Napari` action and run it directly from the image pane,
 where it will appear in the bottom right corner. If you leave the "show roi layer" on, you should even see
 the ROIs that you have created in the browser.
 
@@ -128,17 +128,17 @@ the ROIs that you have created in the browser.
 A few words about this process:
 
 1. _Lazy Loading_:
-   When calling the "Show on Napari" node, not the whole image is downloaded, but we can take the advantage of the lazy loading capabilities of both
+   When calling the "Show on Napari" action, not the whole image is downloaded, but we can take the advantage of the lazy loading capabilities of both
    Arkitekt and Napari to only show you the visible parts.
 
 2. _ROIs_:
    If you have created ROIs in the browser, you can also visualize them in Napari. Just make sure that you have the "Show ROI Layer" option enabled, when
-   assigning the node. Importantly you will notice that if you mark rois on the ROI layer they are _live syncing_ with your server and the browser, and
+   assigning the action. Importantly you will notice that if you mark rois on the ROI layer they are _live syncing_ with your server and the browser, and
    potentially other napari instances that are connected to the same server. Neat right?
 
 3. _Alterations_:
    Whatever alterations you make to the image in Napari, will stay in Napari. So if you want to save your alterations back to the server, you need to
-   use the "Upload to Arkitekt" node. More on that later.
+   use the "Upload to Arkitekt" action. More on that later.
 
 ### Fiji
 
@@ -203,7 +203,7 @@ to the process explained in the Napari section. So we will not go into too much 
 
 #### Visualizing your data in ImageJ
 
-To visualize your data in ImageJ, you can simply search for the `Load into Imagej` node and run it directly from the image pane,
+To visualize your data in ImageJ, you can simply search for the `Load into Imagej` action and run it directly from the image pane,
 where it will appear in the bottom right corner.
 
 <video
@@ -220,13 +220,13 @@ where it will appear in the bottom right corner.
 A few words about this process:
 
 1. _Cross Talk_:
-   When calling the `Show on Imagej` node, MikroJ will download the whole image into memory and share this image with Fiji. This means that you can
+   When calling the `Show on Imagej` action, MikroJ will download the whole image into memory and share this image with Fiji. This means that you can
    close the browser and the image will still be available in Fiji.
 
 2. _ROIs_:
    We currently do not support syncing ROIS between Fiji and the Arkitekt Instance automatically. This is defintely on our roadmap, but we have not
-   yet found a good solution. If you have any ideas, please reach out. You can however extract the ROIS on an Image in Fiji through a `Node`.
+   yet found a good solution. If you have any ideas, please reach out. You can however extract the ROIS on an Image in Fiji through an `Action`.
 
 3. _Alterations_:
    Whatever alterations you make to the image in Fiji, will stay in Fiji. So if you want to save your alterations back to the server, you need to
-   use the `Upload from ImageJ` node. More on that in the advanced tutorial.
+   use the `Upload from ImageJ` action. More on that in the advanced tutorial.

@@ -1,6 +1,6 @@
 ---
 title: Your first Tool
-description: Learn what Apps, Plugins, and Nodes are in Arkitekt by installing your first plugin app and using a node to convert a file.
+description: Learn what Apps, Plugins, and Actions are in Arkitekt by installing your first plugin app and using an action to convert a file.
 ---
 
 import { InstallRepoButton } from "@/components/arkitekt";
@@ -13,38 +13,38 @@ In this section we will explore:
 - What are Apps
 - What are Plugins
 - Install our first Arkitekt Plugin (A File Converter)
-- Understand Nodes and how to use them
+- Understand Actions and how to use them
 - Convert a file
 
-## Apps and Nodes
+## Apps and Actions
 
 Before we start using Apps, we need to understand what the term Apps means in the Arkitekt ecosystem. You already go to know "Orkestrator", which is the main app to interface with
 Arkitekt, it provides us with the graphical interface to tell arkitekt what to do. But who is going to do the work?
 
 Well, that's also Apps. Apps are tools that do the image analysis work. They can be anything from a simple file converter script, to GUI Applications like FIJI or Napari, or complex machine learning algorithm.
 The only thing that they really have in common is that they interface with the Arkitekt server, and tell it what they can do. They do this by providing so called
-`Nodes` to the platform. A `Node` is a (conceptual defnition of a) functionality an app can provide. It can be as simple as "I can convert. Give me a file from format A and i convert it to format B" or "I can
+`Actions` to the platform. An `Action` is a (conceptual defnition of a) functionality an app can provide. It can be as simple as "I can convert. Give me a file from format A and i convert it to format B" or "I can
 segment, track and analyze cells in a movie, and can give you the tracks as a Table", or a more complex "I can train a machine learning model to segment cells from your data".
 
 <div className="mt-2 p-6 w-full">
-<img src="/docs/introduction/first_steps/node_explaination.png" alt="The concept of a Node in Arkitekt" />
+<img src="/docs/introduction/first_steps/node_explaination.png" alt="The concept of an Action in Arkitekt" />
 
 <div className="text-gray-400 mb-2">
-<small>The concept of a `Node` in Arkitekt. Nodes are [abstract](/docs/design/terminology/node) defintions of bioimage tasks, that help organize 
-the functinality inside the Arkitekt platform. All outside functionality that can be used with Arkitekt must be defined as a node. </small>
+<small>The concept of an `Action` in Arkitekt. Actions are [abstract](/docs/design/terminology/action) defintions of bioimage tasks, that help organize 
+the functinality inside the Arkitekt platform. All outside functionality that can be used with Arkitekt must be defined as an action. </small>
 </div>
 </div>
 
 <Callout type="info" title="About Inputs and Outputs">
 
-The node inputs and outputs are of most important to understand. They define what the app expects as input, and what it will give you as output.
+The action inputs and outputs are of most important to understand. They define what the app expects as input, and what it will give you as output.
 It is exactly that information that will help us map the data in our server (e.g. a File, or a Dataset) to a correspoing functionality of the app.
 
 </Callout>
 
-Of course the name Node suggests that this is something that is part of a graph. And we will see about it when we start using a Workflow.
+And we will see how an action relates to a graph when we start using a Workflow.
 But for now, lets start simple and find a tool that can convert our data.
-Well wouldn't it be nice if we had that convert node right now? Well, let's install it.
+Well wouldn't it be nice if we had that convert action right now? Well, let's install it.
 
 ## Installing our First App
 
@@ -148,20 +148,10 @@ and you can also stop the app if you want to. But for now, lets leave it running
 ## So how do we use it?
 
 And this is the most important question. How do we use this app? Here is the good news: you don't have to do
-anything special. Now that the app is deployed and running, every node it provides is **immediately available** —
-just find the node you need and assign your data to it directly.
+anything special. Now that the app is deployed and running, every action it provides is **immediately available** —
+just find the action you need and assign your data to it directly.
 
-<Callout type="info" title="It used to be harder">
-
-
-If you used an older version of Arkitekt, you might remember having to _reserve_ a node first — booking it before
-you could use it. We got rid of that entirely. Now an action is simply usable whenever an app (an _agent_) that
-implements it is connected. Isn't this so much easier now?
-
-
-</Callout>
-
-That's really all there is to it. In the next section we'll find the `Convert Omero` node, point our file at it,
+That's really all there is to it. In the next section we'll find the `Convert Omero` action, point our file at it,
 and run the conversion directly.
 
 ## Convert a file
