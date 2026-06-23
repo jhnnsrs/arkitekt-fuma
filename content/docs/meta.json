@@ -3,9 +3,9 @@
   "pages": [
     "index",
     "---Getting Started---",
-    "introduction",
+    "...introduction",
     "---Concepts & Design---",
-    "design",
+    "...design",
     "---Building---",
     "developers",
     "apps",

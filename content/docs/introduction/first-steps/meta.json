@@ -1,4 +1,14 @@
 {
   "title": "First Steps",
-  "pages": ["index", "interface", "upload", "first-tool", "first-task", "first-app", "brief-interlude", "first-workflow", "first-run", "done"]
+  "pages": [
+    "interface",
+    "upload",
+    "first-tool",
+    "first-task",
+    "first-app",
+    "brief-interlude",
+    "first-workflow",
+    "first-run",
+    "done"
+  ]
 }

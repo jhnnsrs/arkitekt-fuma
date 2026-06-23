@@ -1,4 +1,13 @@
 {
   "title": "Services",
-  "pages": ["index", "lok", "rekuest", "fluss", "mikro", "port", "next"]
+  "pages": [
+    "lok",
+    "rekuest",
+    "fluss",
+    "mikro",
+    "port",
+    "kabinet",
+    "kluster",
+    "omeroark"
+  ]
 }

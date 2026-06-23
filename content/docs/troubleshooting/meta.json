@@ -1,4 +1,9 @@
 {
   "title": "Troubleshooting",
-  "pages": ["index", "general", "startup", "interface", "app"]
+  "pages": [
+    "general",
+    "startup",
+    "interface",
+    "app"
+  ]
 }

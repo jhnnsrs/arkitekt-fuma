@@ -1,4 +1,7 @@
 {
   "title": "Plugins",
-  "pages": ["index", "kare", "segmentor"]
+  "pages": [
+    "kare",
+    "segmentor"
+  ]
 }

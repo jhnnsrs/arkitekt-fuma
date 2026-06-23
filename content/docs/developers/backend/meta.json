@@ -1,4 +1,6 @@
 {
   "title": "Backend Libraries",
-  "pages": ["index", "koherent"]
+  "pages": [
+    "koherent"
+  ]
 }

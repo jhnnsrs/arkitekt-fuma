@@ -1,4 +1,6 @@
 {
   "title": "Contribute",
-  "pages": ["index", "projects"]
+  "pages": [
+    "projects"
+  ]
 }

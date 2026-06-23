@@ -1,7 +1,6 @@
 {
   "title": "Various",
   "pages": [
-    "index",
     "containers",
     "gpu",
     "lazy-loading",

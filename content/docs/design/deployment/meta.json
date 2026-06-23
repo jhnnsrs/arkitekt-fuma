@@ -1,7 +1,10 @@
 {
   "title": "Deployment",
   "pages": [
-    "index",
-    "on-premise"
+    "---On Premise---",
+    "on-premise",
+    "cli",
+    "gui",
+    "testing"
   ]
 }

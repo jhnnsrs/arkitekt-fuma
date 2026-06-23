@@ -1,4 +1,7 @@
 {
   "title": "Apps",
-  "pages": ["index", "plugins", "standalones"]
+  "pages": [
+    "plugins",
+    "standalones"
+  ]
 }

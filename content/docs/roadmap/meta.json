@@ -1,4 +1,7 @@
 {
   "title": "Roadmap",
-  "pages": ["index", "installation", "thoughts"]
+  "pages": [
+    "installation",
+    "thoughts"
+  ]
 }
