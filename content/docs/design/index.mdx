@@ -9,18 +9,23 @@ This is the home of the Arkitekt design docs. Here you will find the information
 what design decisions have been made. This should help you understand how to use Arkitekt and how to potentially contribute to the project. 
 When discussing the design of Arkitekt we will first have to adress to different aspects of the platform, which are:
 
-- Server
-- App
+- Apps
+- Server (and its services)
+- Coordinator (and authentication)
 
+
+## Apps
+
+Apps are the main building blocks of any work done on Arkitekt platform. They are the entities that provide the actual functionality of the platform, as for the 
+most part the server is just a communication platform and a data store. Apps are the entities that provide the actual functionality of the platform.
 
 
 ## Server
 
 The server is the core of the Arkitekt platform. It is the 'heart' of the platform and provides the backbone for the Arkitekt platform. It represents the central
-access point for the `Apps` and provides a communication platform between them. As a `Microservice` platform, Arkitekts server is build around multiple `Services`
+access point for the `Apps` and provides a communication platform between them. As a modular platform, Arkitekts server is build around multiple `Services`
 that provide the functionality of the platform. When deploying Arkitekt, you can choose to [personalize](/docs/design/deployment/) your Arkitekt Server with the services you need, and personalize
 the server to your needs.
-
 
 
 <Callout type="info" title="On the term `Server`">
@@ -30,9 +35,8 @@ that are deployed on multiple machines.
 
 </Callout>
 
+# Coordinator
 
-## Apps
+The coordinator is arguably on the surface the most boring and uninteresting part of the Arkitekt platform. It is a service that is responsible for authentication and authorization of users, and for managing the access to the different services of the Arkitekt platform. The coordinator is also responsible for managing the access to the different apps that are deployed on the platform. The coordinator is a service that is responsible for managing the access to the different services of the Arkitekt platform, and for managing the access to the different apps that are deployed on the platform.
+Under the hood its probably the single most important part of the Arktikt platform, as it is responsible for managing the access to the different services and apps that are deployed on the platform. Without the coordinator, the Arkitekt platform would not be able to function properly, as it would not be able to manage the access to the different services and apps that are deployed on the platform.
 
-Apps are the main building blocks of any work done on Arkitekt platform. They are the entities that provide the actual functionality of the platform, as for the 
-most part the server is just a communication platform and a data store. Apps are the entities that provide the actual functionality of the platform. They are the
-ones that provide the user interface and the actual functionality.
