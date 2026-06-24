@@ -5,13 +5,6 @@ description: Apps are agents that connect to the Arkitekt platform to provide fu
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-# Apps
-
-Arkitekt is built around connecting Apps with our services. Without these Apps Arkitekt would be just a (reasonably cool) storage platform with a developer interface. 
-Apps ( in the Arkitekt sense) connect to arkitekt and provide the functionality that makes Arkitekt useful and let it does stuff (like applying filters to images) or lets interact with the data that you store in Arkitekt.
- As such, the definition of an arkitekt App is a bit broaders, than what you might think of as an App (especially if you are used to the App Store on your phone). 
- This section will introduce you to the concept of an App in Arkitekt, and will give you a few examples of what an App can be.
-
 <div className="mt-2">
 <img src="/docs/design/terminology/app.png" alt="Arkitekts design as an App middleman" />
 
@@ -23,7 +16,7 @@ Apps ( in the Arkitekt sense) connect to arkitekt and provide the functionality 
 How apps fit into the Arkitekt ecoystem is best examplified by the interplay between the Orkestrator _App_ and the Fiji _App_. While Arkitekt only stands as the connection layer it is these two apps that actually manage and do the work. Orkestrator assigns work and Fiji does the actually work. Arkitekt only acts as the Middleman, so that they don't have to interact directly with each other (which would be a lot more complicated than you might think).
 
 
-# The type of Apps
+## The type of Apps
 
 You already saw that Orkestrator and Fiji are apps, but Arkitekts definition of apps is way broader that an application with a Graphical User Interface.
  In fact, almost anything can be an app, as long as it is able to connect to Arkitekt. 

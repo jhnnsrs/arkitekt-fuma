@@ -5,17 +5,6 @@ description: Add provenance-aware audit logging to an Arkitekt backend service â
 
 import { GithubRepo } from "@/components/docs";
 
-# Koherent
-
-Koherent adds **provenance-aware audit logging** to Django services that expose a
-[Strawberry](https://strawberry.rocks/) GraphQL API. It is a thin layer over
-[django-simple-history](https://django-simple-history.readthedocs.io/): every change to a
-tracked model is recorded as a history row, and each row is attributed to *who* changed it,
-*which client/app* they used, and the verified **task** it happened under.
-
-It exposes those answers directly in your GraphQL schema as a queryable, filterable `provenance`
-field.
-
 <GithubRepo url="https://github.com/jhnnsrs/koherent" title="Koherent" />
 
 <Callout type="info" title="Concepts first?">

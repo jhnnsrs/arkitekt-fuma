@@ -3,12 +3,6 @@ title: Architecture
 description: An overview of how Arkitekt is put together — how apps find and authenticate to services, how the platform is secured, and how every data change is attributed.
 ---
 
-# Architecture
-
-Arkitekt is built as a set of small, largely independent services that can run on a single
-machine, a self-managed cluster, or the cloud. This section explains the cross-cutting concerns
-that hold those pieces together.
-
 - **[Service Discovery](/docs/design/architecture/service-discovery)** — how apps locate and
   authenticate to the services running in a given deployment via the Fakts protocol.
 - **[Security](/docs/design/architecture/security)** — the measures Arkitekt uses to protect

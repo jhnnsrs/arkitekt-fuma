@@ -3,10 +3,6 @@ title: Design
 description: An introduction to the Arkitekt design docs, covering the Server and Apps that make up the platform.
 ---
 
-# Welcome to the Arkitekt Design Docs
-
-This is the home of the Arkitekt design docs. Here you will find the information you need to understand how Arkitekt works under the hood and
-what design decisions have been made. This should help you understand how to use Arkitekt and how to potentially contribute to the project. 
 When discussing the design of Arkitekt we will first have to adress to different aspects of the platform, which are:
 
 - Apps
@@ -35,7 +31,7 @@ that are deployed on multiple machines.
 
 </Callout>
 
-# Coordinator
+## Coordinator
 
 The coordinator is arguably on the surface the most boring and uninteresting part of the Arkitekt platform. It is a service that is responsible for authentication and authorization of users, and for managing the access to the different services of the Arkitekt platform. The coordinator is also responsible for managing the access to the different apps that are deployed on the platform. The coordinator is a service that is responsible for managing the access to the different services of the Arkitekt platform, and for managing the access to the different apps that are deployed on the platform.
 Under the hood its probably the single most important part of the Arktikt platform, as it is responsible for managing the access to the different services and apps that are deployed on the platform. Without the coordinator, the Arkitekt platform would not be able to function properly, as it would not be able to manage the access to the different services and apps that are deployed on the platform.

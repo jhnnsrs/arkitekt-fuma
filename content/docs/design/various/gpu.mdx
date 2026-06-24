@@ -3,12 +3,6 @@ title: Arkitekt and the GPU
 description: How Arkitekt enables GPU-accelerated tools, both through standalone connected tools and through Plugin apps running in docker containers.
 ---
 
-# Arkitekt and the GPU
-
-Quite a lot of modern image analysis tools, especially those based on deep learning, are designed to run on GPUs. Arkitekt aims
-to make it easy to use these tools, and to make it easy to run them on GPUs. However there are a few things to be aware of, as
-Arkitekt is not a magical solution to all GPU problems.
-
 ## GPU Support
 
 There are two different ways to use GPUs with Arkitekt. The first is to use the GPU support built into the standalone tools themselves and
@@ -28,7 +22,7 @@ and request GPU access from the underlying service (docker engine). This </small
 </div>
 </div>
 
-# GPU Support on Windows
+## GPU Support on Windows
 
 Luckily the easy of integration of the CUDA support into docker containers has gotten **a lot** easier in the last two years.
 Windows users will no longer need to install the NVIDIA Container Toolkit, but can instead use the WSL2 backend of Docker Desktop.

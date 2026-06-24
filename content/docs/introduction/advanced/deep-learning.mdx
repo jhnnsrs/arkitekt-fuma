@@ -11,7 +11,7 @@ the deep learning tools that are available.
 In this section of the documentation we will try to show you how to get started with deep learning and how Arkitekt can help you,
 by showing you how to create a simple "deep learning enabled" workflow, that you can use to predict the segmentation of nuclei in a cell culture.
 
-## Prerequisites
+### Prerequisites
 
 To get started with deep learning and Arkitekt you should:
 
@@ -21,7 +21,7 @@ To get started with deep learning and Arkitekt you should:
   will be very slow.
 - Either Mikro-Napari or Fiji with MikroJ installed. If you don't have either of these, you can still follow along, but you won't be able to run the workflow.
 
-# Our task
+## Our task
 
 We would like to create a workflow that can take an image of nuclei in a cell culture and predict the segmentation of the nuclei.
 We will be using a deep learning model based on [Stardist](https://github.com/stardist/stardist) to do the prediction.
@@ -29,7 +29,7 @@ We will be using the same dataset that we have used in the [basics of Arkitekt](
 
 <img src="/docs/introduction/advanced/segmentation.png" alt="Nuclei segmentation" />
 
-## The problems we are trying to solve
+### The problems we are trying to solve
 
 In this tutorial we would like to show you how to create a simple deep learning workflow in Arkitekt, and how Arkitekt can solve some common issues,
 that you might encounter when trying to create your own deep learning workflows.
@@ -60,7 +60,7 @@ Arkitet is not trying to replace these solutions, but rather complement them. We
 
 </Callout>
 
-## How to use Deep Learning in Arkitekt
+### How to use Deep Learning in Arkitekt
 
 So how do we install Stardist? Well just like any other plugin. You can add the `segmentor` repository to your Arkitekt installation by clicking on the button below.
 
@@ -71,12 +71,12 @@ So how do we install Stardist? Well just like any other plugin. You can add the 
 And then you can install the latest version of segmentor by deploying it as an plugin, as you learned in the [basics of Arkitekt](/docs/introduction/first-steps/first-tool).
 For the rest of this tutorial we will assume that you have installed the `segmentor` plugin.
 
-### Testing the plugin
+#### Testing the plugin
 
 Once the plugin is installed you can easily test it out by running it on images that are stored on your arkitekt image. For this tutorial we will be using a pretrained model, that is already included in the plugin.
 You can run the prediction on your image by utilizing the `Segment Fluo2` action.
 
-## Integrate with ImageJ
+### Integrate with ImageJ
 
 Now that we have tested our plugin, we would like to integrate it with our favourite bioimage analysis app. In this case we will be using Fiji through MikroJ, but you can use any other app that is supported by Arkitekt.
 For this we will be using two actions provided by Fiji, the `Upload Image` action and the `Show Image` action. The `Upload Image` action will take the image from Fiji and upload it to the Arkitekt server,
@@ -110,7 +110,7 @@ Once it is deployed, you can run the workflow directly from the `Dashboard` of O
   <small> The workflow in action utilizing MikroJ</small>
 </div>
 
-## Integrate with Napari
+### Integrate with Napari
 
 Now that we have seen how to integrate with ImageJ, let's try to do the same with Napari. Its quite similar to the ImageJ integration, but this time we will be using the `Upload Layer` action and the `Show on Napari` action provided by Napari.
 
@@ -133,6 +133,6 @@ utilizing the `Upload Image` action and the `Show Image` action, and before depl
 
 </Callout>
 
-## Our own model
+### Our own model
 
 Here we have used a pretrained model, but what if we want to use our own model? Well that's easy. Training your own model on the segmentor plugin is also quite easy, but lets explore that in the [next tutorial](/docs/introduction/advanced/training)

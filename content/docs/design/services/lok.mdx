@@ -5,22 +5,6 @@ description: A central, distributed backend for managing and authorizing users a
 
 import { GithubRepo } from "@/components/docs";
 
-# Lok
-
-
-Lok is a central backend to manage and authorize User and Applications in a distributed
-settings. Loks provides endpoints for apps to configure themselvers (through the Fakts protocol)
-and in a second step to authenticate and authorize users. For the latter it is build on top of [Oauth2](https://oauth.net/2/)
-and [OpenID Connect](https://openid.net/connect/). It then provides a central authentication and authorization
-service for applications to register and authenticate users, and issues JWT token for accessing services.
-
-As JWT are cryptographically signed, they can be verified by any service, and do not require
-a central session store. 
-
-This distributed and scalable authentication and authorization system, was developed as the backbone for the
-Arkitekt platform, but can be used as a standalone service for any application.
-
-
 <GithubRepo url="https://github.com/arkitektio/lok-server" title="Lok"/>
 
 ## Design

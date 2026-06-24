@@ -5,14 +5,9 @@ description: A stateless gateway for managing and archiving OMERO data, wrapping
 
 import { GithubRepo } from "@/components/docs";
 
-# OmeroArk
-
-OmeroArk is a tool for managing and archiving data from OMERO. It is designed to be used in conjunction with the OMERO server, 
-and provides a familiar GraphQL API for querying and managing data on the Omero server.
-
 <GithubRepo url="https://github.com/arkitektio/omero-ark-server" title="OmeroArk"/>
 
-# Design
+## Design
 
 OmeroArk is designed to be a stateless gateway that wraps the Blitz based Omero-Server in a more documentated GraphQL API inline with the Arkitekt design principles.
 
@@ -37,7 +32,7 @@ raw data from the OMERO server, because of limitations in the Blitz Gateway, the
 
 </Callout>
 
-# Features
+## Features
 
 - **GraphQL API**: OmeroArk provides a familiar (http based) GraphQL API for querying and managing data on the Omero server.
 - **Stateless Gateway**: OmeroArk is designed to be a stateless gateway and does not need to sync data with the OMERO server. What you see is what you
