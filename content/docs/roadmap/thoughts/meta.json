@@ -1,4 +1,7 @@
 {
   "title": "Thoughts",
-  "pages": ["nextflow", "uc2", "index"]
+  "pages": [
+    "nextflow",
+    "uc2"
+  ]
 }

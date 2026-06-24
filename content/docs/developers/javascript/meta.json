@@ -1,4 +1,7 @@
 {
   "title": "Typescript/Javascript",
-  "pages": ["index", "installation", "usage"]
+  "pages": [
+    "installation",
+    "usage"
+  ]
 }

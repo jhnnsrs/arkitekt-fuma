@@ -1,6 +1,6 @@
 ---
 title: Lets get it rolling
-description: Adapting your first Arkitekt app into a real node and using lifecycle hooks like startup, background, state, and context.
+description: Adapting your first Arkitekt app into a real action and using lifecycle hooks like startup, background, state, and context.
 ---
 
 So we just created our first app. And ran it against the Arkitekt Server. But what did we just do ? And saying my name is not really
@@ -18,7 +18,7 @@ from arkitekt_next import register
 def hello_world(name: str) -> str:
     """Hello World
 
-    This is a simple Hello World Node, that will greet you by your name.
+    This is a simple Hello World Action, that will greet you by your name.
     and print it to the console.
 
     Args:
@@ -50,7 +50,7 @@ from mikro_next.api.schema import Image, from_array_like
 def max_project(image: Image) -> Image:
     """Max Project a microscopy image
 
-    This is a simple node that will max project a microscopy image along the z-axis.
+    This is a simple action that will max project a microscopy image along the z-axis.
 
     Args:
         image (Image): The input image
@@ -76,7 +76,7 @@ service), you can also create your own structures (even non-serializable ones) t
 
 ## Advanced: App Lifecycle Hooks
 
-`arkitekt-next` provides several decorators beyond `@register` to help you manage your app's lifecycle and share state between nodes.
+`arkitekt-next` provides several decorators beyond `@register` to help you manage your app's lifecycle and share state between actions.
 
 ### `@startup` — Run code on agent start
 
@@ -110,9 +110,9 @@ async def poll_hardware():
         await asyncio.sleep(5)
 ```
 
-### `@state` — Share mutable state between nodes
+### `@state` — Share mutable state between actions
 
-Use `@state` to define a dataclass that holds shared state across all your nodes. The state is initialized once and injected into any node that declares it as a parameter.
+Use `@state` to define a dataclass that holds shared state across all your actions. The state is initialized once and injected into any action that declares it as a parameter.
 
 ```python
 from arkitekt_next import register, startup, state
@@ -133,9 +133,9 @@ def run_inference(image: Image, my_state: MyState) -> Image:
     return from_array_like(result, name="inference result")
 ```
 
-### `@context` — Inject app-level context into nodes
+### `@context` — Inject app-level context into actions
 
-Use `@context` to define a context class that provides access to connected services (e.g. database clients) within your nodes.
+Use `@context` to define a context class that provides access to connected services (e.g. database clients) within your actions.
 
 ```python
 from arkitekt_next import register, context
@@ -145,7 +145,7 @@ class MyContext:
     ...  # populated automatically with service clients
 
 @register
-def my_node(image: Image, context: MyContext) -> Image:
+def my_action(image: Image, context: MyContext) -> Image:
     ...
 ```
 

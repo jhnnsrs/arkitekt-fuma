@@ -1,4 +1,7 @@
 {
   "title": "Advanced",
-  "pages": ["index", "fiji-workflow", "omero-sink"]
+  "pages": [
+    "fiji-workflow",
+    "omero-sink"
+  ]
 }

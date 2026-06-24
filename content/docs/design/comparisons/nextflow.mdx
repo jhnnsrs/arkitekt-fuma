@@ -28,7 +28,7 @@ it is still a language you have to learn, and a boundary you have to cross every
 time your logic outgrows what the DSL expresses comfortably.
 
 Arkitekt takes the opposite bet: **use programming and Python primitives you
-already know**. A node is just a decorated Python function — your type hints become
+already know**. An action is just a decorated Python function — your type hints become
 its input and output ports, your docstring becomes its description:
 
 ```python
@@ -40,7 +40,7 @@ def run_stardist(image: Image) -> Image:
     return segment(image)
 ```
 
-There is no separate workflow language to learn. You orchestrate these nodes with
+There is no separate workflow language to learn. You orchestrate these actions with
 ordinary Python — loops, conditionals, `async`/`await`, exceptions, your own
 helper functions — because the control flow *is* Python. When your logic gets
 genuinely complex (a branch that depends on a measured value, a retry, a loop that
@@ -48,7 +48,7 @@ runs until convergence), you do not hit a DSL ceiling; you just write the code.
 
 For the *simpler* end of the spectrum — and for collaborators who do not want to
 write code at all — Arkitekt also ships a **graphical Workflow Designer** (in the
-Orkestrator app). The exact same `@register`-ed nodes show up as draggable blocks
+Orkestrator app). The exact same `@register`-ed actions show up as draggable blocks
 that you wire together visually. So the choice is not "graphical *or* code": simple
 flows can be drawn, complex ones written in Python, and both run on the same engine.
 
@@ -115,7 +115,7 @@ In this workflow, the images are loaded into a channel and then passed to the `R
 that will spawn *multiple os-level processes* in your command line. This means that stardist will actually start executing, load the model into the GPU, and then segment the image. Once the
 segmentation is finished, the process will exit, and the state is lost. The output will be passed to the next task, which will process its queue of images autonomously and in "parallel".
 
-This is very different from the way that Arkitekt executes workflows. In Arkitekt, the apps are stateful, and can maintain their state. This means that the `RunStarDist` node in our workflow
+This is very different from the way that Arkitekt executes workflows. In Arkitekt, the apps are stateful, and can maintain their state. This means that the `RunStarDist` action in our workflow
 (see below) can maintain its state, and will not have to exit after processing one image. This means that the model will only be loaded once, and then the images will be processed one after
 another, in the *same os-level process*. This has some important implications for the performance of the workflow, as the whole workflow will be executed in a **single process**, and setup time
 will be minimized.
@@ -144,7 +144,7 @@ stateless model, every task is a fresh process, so that cold-start cost is paid
 There is no clean way around it: the process exits, the model goes with it.
 
 Arkitekt's stateful agents make this a non-issue. The model lives in the app's
-**`@context`** — app-level resources injected into your nodes — and is loaded
+**`@context`** — app-level resources injected into your actions — and is loaded
 **once** by a `@startup` hook when the agent first connects, then reused for every
 item it processes:
 
@@ -167,7 +167,7 @@ def run_inference(image: Image, context: AppContext) -> Image:
 
 (`@context` is the home for long-lived resources like models and service clients;
 `@state`, by contrast, is for mutable runtime state you want to share and publish
-between nodes — not where a model belongs.)
+between actions — not where a model belongs.)
 
 The agent stays resident and keeps the warm model in GPU memory between
 invocations. For a streaming smart-microscopy loop — where you want the next frame
@@ -180,7 +180,7 @@ for big batch jobs, where you want to process a large number of images, and star
 fast arriving messages and you want to minimze your time to feedback (as it might be important to get the results of your workflow as fast as possible, e.g in a smart microscopy setting).
 
 <div className="mt-2 w-20">
-<img src="/docs/design/vs/batch-stream.png" alt="The time to feedback (results of a single time of your workflow)" />
+<img src="/docs/design/comparisons/batch-stream.png" alt="The time to feedback (results of a single time of your workflow)" />
 
 <div className="text-gray-400 mb-2">
 <small> The time to feedback (results of a single time of your worklfow) </small>
@@ -240,7 +240,7 @@ graph:
 
 Connected agents and the tasks assigned to them are the backbone of how Arkitekt
 schedules work. If you want the full mental model, see
-[Assignation](/docs/design/terminology/assignation).
+[Task](/docs/design/terminology/task).
 
 </Callout>
 

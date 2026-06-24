@@ -1,4 +1,9 @@
 {
   "title": "For Developers",
-  "pages": ["index", "contribute", "javascript", "python", "backend"]
+  "pages": [
+    "contribute",
+    "javascript",
+    "python",
+    "backend"
+  ]
 }

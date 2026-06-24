@@ -1,4 +1,12 @@
 {
   "title": "Standalones",
-  "pages": ["index", "konstruktor", "orkestrator", "mikro-napari", "mikro-manager", "mikroj", "gucker", "pokket"]
+  "pages": [
+    "konstruktor",
+    "orkestrator",
+    "mikro-napari",
+    "mikro-manager",
+    "mikroj",
+    "gucker",
+    "pokket"
+  ]
 }

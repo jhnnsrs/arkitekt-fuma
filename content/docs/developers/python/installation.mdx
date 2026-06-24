@@ -28,7 +28,7 @@ CLI and add additional dependencies as needed.
 ```bash
 pip install arkitekt-next
 pip install mikro-next   # for microscopy image support
-pip install rekuest-next # for registering nodes
+pip install rekuest-next # for registering actions
 ```
 
 
@@ -74,12 +74,12 @@ creating a new image and uploading it to the mikro service. Once we leave the co
 manager, the app is automatically closed and your script can continue to run as usual.
 Also you run this like any other python script, without any additional steps.
 
-To get started with the classical style, you can follow the [Classic Tutorial](/docs/developers/python/classical)
+To get started with the classical style, you can follow the [Classic Tutorial](/docs/developers/python/classic)
 
 ## Plugin
 
 Apps that follow the `plugin style` are more integrated into the Arkitekt ecosystem.
-The Plugin style is your best choice if you want to **provide new functionality** (nodes)
+The Plugin style is your best choice if you want to **provide new functionality** (actions)
 and develop your own Arkitekt App. In the plugin style the Arkitekt CLI takes more control over your development process, and streamlines
 the process of developing and publishing apps so that they can be used by other users.
 
@@ -119,8 +119,8 @@ if __name__ == "__main__":
 ```
 
 Here we are creating an app that can be run by the Arkitekt CLI and that
-provides a Node that can be used by other apps. The
-`@register` decorator is used to mark a function as a node.
+provides an Action that can be used by other apps. The
+`@register` decorator is used to mark a function as an action.
 
 While you can run this script like any other python script (executing the
 `if __name__ == "__main__"` block), in the plugin style you use
@@ -131,7 +131,7 @@ arkitekt-next run dev
 ```
 
 The CLI will then create the App context for your app and register the functions
-that are marked with the `@register` decorator as nodes.
+that are marked with the `@register` decorator as actions.
 
 <Callout type="info" title="Why do we use this?">
 

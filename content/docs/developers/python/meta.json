@@ -1,4 +1,17 @@
 {
   "title": "Python",
-  "pages": ["index", "installation", "graphql", "classical", "plugin"]
+  "pages": [
+    "installation",
+    "graphql",
+    "---Classic Style---",
+    "classic",
+    "classic-usage",
+    "read-write",
+    "---Plugin Style---",
+    "plugin",
+    "plugin-usage",
+    "more",
+    "bloks",
+    "build"
+  ]
 }
