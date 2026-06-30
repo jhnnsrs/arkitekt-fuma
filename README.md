@@ -1,47 +1,84 @@
 # arkitekt-fuma
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+The documentation and marketing site for **[Arkitekt](https://github.com/arkitektio)** — an
+open-source platform for bioimage analysis and beyond. Arkitekt is a "middleman"
+that sits between your data, your tools and your team, turning scattered scripts
+into shareable, reactive analysis apps.
 
-It is a Next.js app with [Static Export](https://nextjs.org/docs/app/guides/static-exports) configured.
+This repository is the website itself: guides, design docs, tutorials and the
+landing page. It's a [Next.js](https://nextjs.org) app built with
+[Fumadocs](https://fumadocs.dev) and exported as a static site to GitHub Pages.
 
-Run development server:
+## Quick start
+
+Requires **Node 22** (see [`.nvmrc`](.nvmrc)) and **pnpm**.
 
 ```bash
-npm run dev
-# or
+pnpm install
 pnpm dev
-# or
-yarn dev
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the site. Content and
+components hot-reload as you edit.
 
-## Explore
+## Scripts
 
-In the project, you can see:
+| Command              | Description                                                        |
+| -------------------- | ----------------------------------------------------------------- |
+| `pnpm dev`           | Start the dev server with hot reload.                             |
+| `pnpm build`         | Build the static export into `out/`.                             |
+| `pnpm start`         | Serve the built `out/` directory locally (`serve`).              |
+| `pnpm types:check`   | Regenerate MDX/route types and run `tsc --noEmit`.              |
+| `pnpm lint`          | Run ESLint.                                                      |
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+## Writing content
 
-| Route                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `app/(home)`              | The route group for your landing page and other pages. |
-| `app/docs`                | The documentation layout and pages.                    |
-| `app/api/search/route.ts` | The Route Handler for search.                          |
+All documentation lives in [`content/docs`](content/docs) as MDX. The structure
+mirrors the site navigation:
 
-### Fumadocs MDX
+| Area                            | What it covers                                          |
+| ------------------------------- | ------------------------------------------------------- |
+| `content/docs/introduction`     | Installation and first-steps tutorials.                |
+| `content/docs/design`           | Philosophy, architecture, services and terminology.    |
+| `content/docs/apps`             | Standalone apps and plugins in the ecosystem.          |
+| `content/docs/developers`       | Building apps in Python and JavaScript.                |
+| `content/docs/roadmap`          | What's coming next.                                    |
 
-A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
+Each folder uses a `meta.json` to control sidebar ordering and labels. To add a
+page, drop a new `.mdx` file in the relevant folder with a `title` and
+`description` in its frontmatter — `meta.json` controls where it appears.
 
-Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
+MDX components (callouts, code blocks, custom React widgets) are available inside
+content. Frontmatter and MDX options are configured in
+[`source.config.ts`](source.config.ts).
 
-## Learn More
+## Project layout
 
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
+```
+content/docs/         MDX documentation content
+src/app/(home)/       Landing page, showcase, explorer and blog routes
+src/app/docs/         Documentation layout and dynamic pages
+src/app/api/          Search route handler
+src/components/       Marketing sections, bento grids, MDX widgets, UI primitives
+src/components/arkitekt/   Live Arkitekt client widgets (GraphQL explorer, connector)
+src/lib/source.ts     Fumadocs content-source adapter
+src/lib/shared.ts     Site-wide config (app name, repo links)
+src/lib/layout.shared.tsx  Shared layout options
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs
+The site goes beyond plain docs: it embeds interactive components such as a 3D
+robot scene, a live GraphQL explorer, an Arkitekt instance connector, and
+animated marketing sections.
+
+## Deployment
+
+Pushing to `main` triggers the [GitHub Pages workflow](.github/workflows/deploy.yml),
+which runs `pnpm build` and publishes the static `out/` directory. The site is
+served from a base path of `/arkitekt-fuma`, set via the `PAGES_BASE_PATH`
+environment variable at build time.
+
+## Learn more
+
+- [Arkitekt documentation](https://jhnnsrs.github.io/arkitekt-fuma/) — the live site.
+- [Fumadocs](https://fumadocs.dev) — the docs framework.
+- [Next.js Static Exports](https://nextjs.org/docs/app/guides/static-exports) — the build target.
